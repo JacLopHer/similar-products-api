@@ -13,7 +13,6 @@ import java.util.List;
 /**
  * Secondary/Driven Adapter - Implements LoadSimilarProductIdsPort.
  * Calls external similar products API via HTTP.
- * REACTIVE - returns Mono for non-blocking I/O.
  */
 @Slf4j
 @Component

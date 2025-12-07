@@ -7,12 +7,11 @@ import reactor.core.publisher.Mono;
 /**
  * Output port (Secondary/Driven port) - SPI for loading products.
  * Defines what the application needs from infrastructure.
- * REACTIVE - uses Mono for non-blocking I/O.
  */
 public interface LoadProductPort {
     
     /**
-     * Loads a product by its ID - REACTIVE.
+     * Loads a product by its ID.
      *
      * @param productId the product identifier
      * @return Mono containing the product if found, empty Mono otherwise

@@ -13,7 +13,6 @@ import reactor.core.publisher.Mono;
 /**
  * Secondary/Driven Adapter - Implements LoadProductPort.
  * Calls external product API via HTTP.
- * REACTIVE - returns Mono for non-blocking I/O.
  */
 @Slf4j
 @Component

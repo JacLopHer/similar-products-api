@@ -9,12 +9,11 @@ import java.util.List;
 /**
  * Input port (Primary/Driving port) - Use Case interface.
  * Defines what the application can do.
- * REACTIVE - uses Mono for non-blocking I/O.
  */
 public interface GetSimilarProductsUseCase {
     
     /**
-     * Gets similar products for a given product ID - REACTIVE.
+     * Gets similar products for a given product ID.
      *
      * @param productId the product identifier
      * @return Mono with list of similar products ordered by similarity

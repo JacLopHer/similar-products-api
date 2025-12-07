@@ -23,7 +23,6 @@ import static com.company.similarproducts.infrastructure.config.CacheConfig.SIMI
 /**
  * HTTP Client for external Product API.
  * Uses WebClient with Circuit Breaker, Retry and Cache patterns.
- * REACTIVE - returns Mono for non-blocking I/O.
  */
 @Slf4j
 @Component
@@ -35,10 +34,6 @@ public class ProductApiClient {
     @Value("${external-apis.product-service.timeout:5000}")
     private int timeout;
 
-    /**
-     * Get product by ID - REACTIVE (non-blocking) with CACHE.
-     * Returns Mono.empty() on 404 or circuit breaker activation.
-     */
     @Cacheable(value = PRODUCTS_CACHE, key = "#productId", unless = "#result == null")
     @CircuitBreaker(name = "productService", fallbackMethod = "getProductByIdFallback")
     @Retry(name = "productService")
@@ -63,10 +58,6 @@ public class ProductApiClient {
                 });
     }
 
-    /**
-     * Get similar product IDs - REACTIVE (non-blocking) with CACHE.
-     * Returns empty list on error or circuit breaker activation.
-     */
     @Cacheable(value = SIMILAR_IDS_CACHE, key = "#productId")
     @CircuitBreaker(name = "productService", fallbackMethod = "getSimilarProductIdsFallback")
     @Retry(name = "productService")
@@ -84,10 +75,9 @@ public class ProductApiClient {
                     productId, e.getClass().getSimpleName()));
     }
 
-    // Fallback methods - must return same type (Mono)
     private Mono<ProductApiDto> getProductByIdFallback(String productId, Exception ex) {
         if (ex.getClass().getSimpleName().contains("CallNotPermitted")) {
-            log.debug("Circuit OPEN - Skipping call to product: {} (returning cached or empty)", productId);
+            log.debug("Circuit OPEN - Skipping call to product: {}", productId);
         } else if (ex instanceof TimeoutException) {
             log.warn("Timeout calling product {}: API took >{}ms", productId, timeout);
         } else {
@@ -98,7 +88,7 @@ public class ProductApiClient {
 
     private Mono<List<String>> getSimilarProductIdsFallback(String productId, Exception ex) {
         if (ex.getClass().getSimpleName().contains("CallNotPermitted")) {
-            log.debug("Circuit OPEN - Skipping call to similar products: {} (returning cached or empty)", productId);
+            log.debug("Circuit OPEN - Skipping call to similar products: {}", productId);
         } else if (ex instanceof TimeoutException) {
             log.warn("Timeout calling similar products {}: API took >{}ms", productId, timeout);
         } else {

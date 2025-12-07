@@ -15,7 +15,7 @@ import java.util.List;
 
 /**
  * Application Service implementing the GetSimilarProductsUseCase.
- * FULLY REACTIVE - no blocking, high concurrency with flatMap.
+ * Orchestrates the business logic using domain ports.
  */
 @Slf4j
 @RequiredArgsConstructor

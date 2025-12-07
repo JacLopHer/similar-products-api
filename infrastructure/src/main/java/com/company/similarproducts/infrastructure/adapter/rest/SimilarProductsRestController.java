@@ -18,7 +18,6 @@ import java.util.List;
 /**
  * Primary/Driving Adapter - REST Controller.
  * Translates HTTP requests to use case calls.
- * REACTIVE - returns Mono for non-blocking responses.
  */
 @Slf4j
 @RestController

@@ -32,9 +32,9 @@ public class CacheConfig {
         CaffeineCacheManager cacheManager = new CaffeineCacheManager(PRODUCTS_CACHE, SIMILAR_IDS_CACHE);
 
         cacheManager.setCaffeine(Caffeine.newBuilder()
-                .maximumSize(10_000)  // Max 10k entradas en cache
-                .expireAfterWrite(5, TimeUnit.MINUTES)  // TTL: 5 minutos
-                .recordStats());  // Habilitar métricas de cache
+                .maximumSize(10_000)
+                .expireAfterWrite(5, TimeUnit.MINUTES)
+                .recordStats());
 
         log.info("Cache configured: maxSize=10000, TTL=5min");
         return cacheManager;
