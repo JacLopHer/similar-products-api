@@ -8,15 +8,14 @@ import com.company.similarproducts.domain.port.LoadProductPort;
 import com.company.similarproducts.domain.port.LoadSimilarProductIdsPort;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import reactor.core.publisher.Flux;
+import reactor.core.publisher.Mono;
 
 import java.util.List;
-import java.util.Objects;
-import java.util.concurrent.CompletableFuture;
 
 /**
  * Application Service implementing the GetSimilarProductsUseCase.
- * Orchestrates the business logic using domain ports.
- * NO infrastructure dependencies - only domain interfaces.
+ * FULLY REACTIVE - no blocking, high concurrency with flatMap.
  */
 @Slf4j
 @RequiredArgsConstructor
@@ -26,36 +25,23 @@ public class GetSimilarProductsService implements GetSimilarProductsUseCase {
     private final LoadSimilarProductIdsPort loadSimilarProductIdsPort;
 
     @Override
-    public List<Product> getSimilarProducts(ProductId productId) {
+    public Mono<List<Product>> getSimilarProducts(ProductId productId) {
         log.info("Getting similar products for: {}", productId);
         
-        // Verify the product exists
-        loadProductPort.loadProduct(productId)
-                .orElseThrow(() -> new ProductNotFoundException(productId));
-
-        // Get similar product IDs
-        List<ProductId> similarProductIds = loadSimilarProductIdsPort.loadSimilarProductIds(productId);
-        
-        log.debug("Found {} similar product IDs", similarProductIds.size());
-
-        // Load all similar products in parallel for performance
-        List<CompletableFuture<Product>> futures = similarProductIds.stream()
-                .map(this::loadProductAsync)
-                .toList();
-
-        // Wait for all futures and collect results, filtering out not found products
-        List<Product> similarProducts = futures.stream()
-                .map(CompletableFuture::join)
-                .filter(Objects::nonNull)
-                .toList();
-        
-        log.info("Returning {} similar products", similarProducts.size());
-        return similarProducts;
-    }
-
-    private CompletableFuture<Product> loadProductAsync(ProductId productId) {
-        return CompletableFuture.supplyAsync(() -> 
-            loadProductPort.loadProduct(productId).orElse(null)
-        );
+        return loadProductPort.loadProduct(productId)
+                .switchIfEmpty(Mono.error(new ProductNotFoundException(productId)))
+                .flatMap(product -> loadSimilarProductIdsPort.loadSimilarProductIds(productId))
+                .doOnNext(ids -> log.debug("Found {} similar product IDs", ids.size()))
+                .flatMapMany(Flux::fromIterable)
+                .flatMap(
+                    id -> loadProductPort.loadProduct(id)
+                            .onErrorResume(e -> {
+                                log.warn("Failed to load product {}: {}", id, e.getMessage());
+                                return Mono.empty();
+                            }),
+                    256
+                )
+                .collectList()
+                .doOnSuccess(products -> log.info("Returning {} similar products", products.size()));
     }
 }

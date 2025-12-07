@@ -11,6 +11,8 @@ import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import reactor.core.publisher.Mono;
+import reactor.test.StepVerifier;
 
 import java.math.BigDecimal;
 import java.util.List;
@@ -55,13 +57,13 @@ class GetSimilarProductsServiceTest {
         Product similarProduct1 = createProduct("2", "Similar Product 1", "90.00");
         Product similarProduct2 = createProduct("3", "Similar Product 2", "110.00");
 
-        when(loadProductPort.loadProduct(productId)).thenReturn(Optional.of(mainProduct));
-        when(loadSimilarProductIdsPort.loadSimilarProductIds(productId)).thenReturn(similarIds);
-        when(loadProductPort.loadProduct(similarId1)).thenReturn(Optional.of(similarProduct1));
-        when(loadProductPort.loadProduct(similarId2)).thenReturn(Optional.of(similarProduct2));
+        when(loadProductPort.loadProduct(productId)).thenReturn(Mono.just(mainProduct));
+        when(loadSimilarProductIdsPort.loadSimilarProductIds(productId)).thenReturn(Mono.just(similarIds));
+        when(loadProductPort.loadProduct(similarId1)).thenReturn(Mono.just(similarProduct1));
+        when(loadProductPort.loadProduct(similarId2)).thenReturn(Mono.just(similarProduct2));
 
         // When
-        List<Product> result = service.getSimilarProducts(productId);
+        List<Product> result = service.getSimilarProducts(productId).block();
 
         // Then
         assertThat(result)

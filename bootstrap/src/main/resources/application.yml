@@ -1,9 +1,20 @@
 server:
   port: 5000
+  tomcat:
+    max-connections: 10000
+    threads:
+      max: 400
+    accept-count: 1000
+    connection-timeout: 20s
+    keep-alive-timeout: 60s
+    max-keep-alive-requests: 100
 
 spring:
   application:
     name: similar-products-api
+  cache:
+    caffeine:
+      spec: maximumSize=10000,expireAfterWrite=10m
 
 external-apis:
   product-service:
@@ -19,7 +30,7 @@ resilience4j:
         waitDurationInOpenState: 10000
         permittedNumberOfCallsInHalfOpenState: 3
         automaticTransitionFromOpenToHalfOpenEnabled: true
-        
+
   retry:
     instances:
       productService:

@@ -11,12 +11,14 @@ import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
+import reactor.core.publisher.Mono;
 
 import java.util.List;
 
 /**
  * Primary/Driving Adapter - REST Controller.
  * Translates HTTP requests to use case calls.
+ * REACTIVE - returns Mono for non-blocking responses.
  */
 @Slf4j
 @RestController
@@ -28,15 +30,14 @@ public class SimilarProductsRestController {
     private final ProductRestMapper mapper;
 
     @GetMapping("/{productId}/similar")
-    public ResponseEntity<List<ProductResponse>> getSimilarProducts(@PathVariable String productId) {
+    public Mono<ResponseEntity<List<ProductResponse>>> getSimilarProducts(@PathVariable("productId") String productId) {
         log.info("REST request received for similar products of productId: {}", productId);
         
-        var products = getSimilarProductsUseCase.getSimilarProducts(new ProductId(productId));
-        var response = products.stream()
-                .map(mapper::toResponse)
-                .toList();
-        
-        log.info("Returning {} similar products", response.size());
-        return ResponseEntity.ok(response);
+        return getSimilarProductsUseCase.getSimilarProducts(new ProductId(productId))
+                .map(products -> products.stream()
+                        .map(mapper::toResponse)
+                        .toList())
+                .doOnSuccess(response -> log.info("Returning {} similar products", response.size()))
+                .map(ResponseEntity::ok);
     }
 }
