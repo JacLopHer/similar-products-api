@@ -27,19 +27,18 @@ public class GetSimilarProductsService implements GetSimilarProductsUseCase {
     @Override
     public Mono<List<Product>> getSimilarProducts(ProductId productId) {
         log.info("Getting similar products for: {}", productId);
-        
+
         return loadProductPort.loadProduct(productId)
                 .switchIfEmpty(Mono.error(new ProductNotFoundException(productId)))
                 .flatMap(product -> loadSimilarProductIdsPort.loadSimilarProductIds(productId))
                 .doOnNext(ids -> log.debug("Found {} similar product IDs", ids.size()))
                 .flatMapMany(Flux::fromIterable)
-                .flatMap(
-                    id -> loadProductPort.loadProduct(id)
-                            .onErrorResume(e -> {
-                                log.warn("Failed to load product {}: {}", id, e.getMessage());
-                                return Mono.empty();
-                            }),
-                    256
+                .filter(id -> id != null && id.value() != null && !id.value().isBlank())  // ⚡ AGREGAR ESTO
+                .flatMap(id -> loadProductPort.loadProduct(id)
+                        .onErrorResume(e -> {
+                            log.warn("Failed to load product {}: {}", id, e.getMessage());
+                            return Mono.empty();
+                        })
                 )
                 .collectList()
                 .doOnSuccess(products -> log.info("Returning {} similar products", products.size()));

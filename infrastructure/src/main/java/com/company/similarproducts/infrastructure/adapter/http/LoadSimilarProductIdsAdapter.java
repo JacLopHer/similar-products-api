@@ -27,6 +27,7 @@ public class LoadSimilarProductIdsAdapter implements LoadSimilarProductIdsPort {
         
         return productApiClient.getSimilarProductIds(productId.value())
                 .map(ids -> ids.stream()
+                        .filter(id -> id != null && !id.isBlank())
                         .map(ProductId::new)
                         .toList());
     }

@@ -34,10 +34,18 @@ public class ProductApiClient {
     @Value("${external-apis.product-service.timeout:5000}")
     private int timeout;
 
-    @Cacheable(value = PRODUCTS_CACHE, key = "#productId", unless = "#result == null")
+    @Cacheable(
+            value = PRODUCTS_CACHE,
+            key = "#productId",
+            condition = "#productId != null && !#productId.isEmpty()",
+            unless = "#result == null")
     @CircuitBreaker(name = "productService", fallbackMethod = "getProductByIdFallback")
     @Retry(name = "productService")
     public Mono<ProductApiDto> getProductById(String productId) {
+        if (productId == null || productId.isBlank()) {
+            log.warn("getProductById called with null/empty productId");
+            return Mono.empty();
+        }
         log.debug("Calling external API for product: {} (cache miss)", productId);
 
         return webClient
@@ -58,10 +66,17 @@ public class ProductApiClient {
                 });
     }
 
-    @Cacheable(value = SIMILAR_IDS_CACHE, key = "#productId")
+    @Cacheable(
+            value = SIMILAR_IDS_CACHE,
+            key = "#productId",
+            condition = "#productId != null && !#productId.isEmpty()")
     @CircuitBreaker(name = "productService", fallbackMethod = "getSimilarProductIdsFallback")
     @Retry(name = "productService")
     public Mono<List<String>> getSimilarProductIds(String productId) {
+        if (productId == null || productId.isBlank()) {
+            log.warn("getSimilarProductIds called with null/empty productId");
+            return Mono.just(List.of());
+        }
         log.debug("Calling external API for similar products of: {} (cache miss)", productId);
 
         return webClient
