@@ -1,5 +1,6 @@
 package com.company.similarproducts.application.service;
 
+import com.company.similarproducts.domain.exception.ProductNotFoundException;
 import com.company.similarproducts.domain.model.Product;
 import com.company.similarproducts.domain.model.ProductId;
 import com.company.similarproducts.domain.port.GetSimilarProductsUseCase;
@@ -24,19 +25,22 @@ public class GetSimilarProductsService implements GetSimilarProductsUseCase {
         log.info("Getting similar products for: {}", productId);
 
         return loadProductPort.loadProduct(productId)
+                .switchIfEmpty(Mono.error(new ProductNotFoundException(productId)))
                 .flatMap(product -> {
                     log.debug("Product {} found, loading similar IDs", productId);
                     return loadSimilarProductIdsPort.loadSimilarProductIds(productId);
                 })
                 .flatMapMany(Flux::fromIterable)
+                .filter(id -> id != null && id.value() != null && !id.value().isBlank())
                 .flatMap(
                         id -> loadProductPort.loadProduct(id)
-                                .doOnError(e -> log.debug("Failed to load product {}: {}", id, e.getMessage()))
-                                .onErrorResume(e -> Mono.empty()),
-                        256
+                                .onErrorResume(e -> {
+                                    log.debug("Failed to load product {}: {}", id, e.getMessage());
+                                    return Mono.empty();
+                                }),
+                        8
                 )
                 .collectList()
-                .doOnSuccess(products -> log.info("Returning {} similar products", products.size()))
-                .defaultIfEmpty(List.of());
+                .doOnSuccess(products -> log.info("Returning {} similar products", products.size()));
     }
 }

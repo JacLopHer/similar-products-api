@@ -1,6 +1,8 @@
 package com.company.similarproducts.infrastructure.adapter.http.client;
 
 import com.company.similarproducts.infrastructure.adapter.http.dto.ProductApiDto;
+import com.github.benmanes.caffeine.cache.Cache;
+import com.github.benmanes.caffeine.cache.Caffeine;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.core.ParameterizedTypeReference;
 import org.springframework.stereotype.Component;
@@ -10,19 +12,27 @@ import reactor.core.publisher.Mono;
 
 import java.time.Duration;
 import java.util.List;
-import java.util.Map;
-import java.util.concurrent.ConcurrentHashMap;
 
 @Slf4j
 @Component
 public class ProductApiClient {
 
     private final WebClient webClient;
-    private final Map<String, Mono<ProductApiDto>> productCache = new ConcurrentHashMap<>();
-    private final Map<String, Mono<List<String>>> similarIdsCache = new ConcurrentHashMap<>();
+    private final Cache<String, Mono<ProductApiDto>> productCache;
+    private final Cache<String, Mono<List<String>>> similarIdsCache;
 
     public ProductApiClient(WebClient webClient) {
         this.webClient = webClient;
+
+        this.productCache = Caffeine.newBuilder()
+                .maximumSize(10_000)
+                .expireAfterWrite(Duration.ofMinutes(10))
+                .build();
+
+        this.similarIdsCache = Caffeine.newBuilder()
+                .maximumSize(5_000)
+                .expireAfterWrite(Duration.ofMinutes(10))
+                .build();
     }
 
     public Mono<ProductApiDto> getProductById(String productId) {
@@ -30,7 +40,7 @@ public class ProductApiClient {
             return Mono.empty();
         }
 
-        return productCache.computeIfAbsent(productId, id ->
+        return productCache.get(productId, id ->
             webClient.get()
                     .uri("/product/{productId}", id)
                     .retrieve()
@@ -54,7 +64,7 @@ public class ProductApiClient {
             return Mono.just(List.of());
         }
 
-        return similarIdsCache.computeIfAbsent(productId, id ->
+        return similarIdsCache.get(productId, id ->
             webClient.get()
                     .uri("/product/{productId}/similarids", id)
                     .retrieve()

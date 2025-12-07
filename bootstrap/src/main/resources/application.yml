@@ -1,6 +1,5 @@
 server:
   port: 5000
-  # Netty configuration (WebFlux)
   netty:
     connection-timeout: 20s
     idle-timeout: 60s
@@ -8,15 +7,11 @@ server:
 spring:
   application:
     name: similar-products-api
-  cache:
-    caffeine:
-      spec: maximumSize=10000,expireAfterWrite=10m
 
 external-apis:
   product-service:
     base-url: http://localhost:3001
     timeout: 2000
-
 
 logging:
   level:
