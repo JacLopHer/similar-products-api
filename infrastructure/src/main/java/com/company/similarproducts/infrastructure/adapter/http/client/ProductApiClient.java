@@ -1,12 +1,8 @@
 package com.company.similarproducts.infrastructure.adapter.http.client;
 
 import com.company.similarproducts.infrastructure.adapter.http.dto.ProductApiDto;
-import io.github.resilience4j.circuitbreaker.annotation.CircuitBreaker;
-import io.github.resilience4j.retry.annotation.Retry;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.beans.factory.annotation.Value;
-import org.springframework.cache.annotation.Cacheable;
 import org.springframework.core.ParameterizedTypeReference;
 import org.springframework.stereotype.Component;
 import org.springframework.web.reactive.function.client.WebClient;
@@ -15,14 +11,13 @@ import reactor.core.publisher.Mono;
 
 import java.time.Duration;
 import java.util.List;
-import java.util.concurrent.TimeoutException;
-
-import static com.company.similarproducts.infrastructure.config.CacheConfig.PRODUCTS_CACHE;
-import static com.company.similarproducts.infrastructure.config.CacheConfig.SIMILAR_IDS_CACHE;
+import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
 
 /**
  * HTTP Client for external Product API.
- * Uses WebClient with Circuit Breaker, Retry and Cache patterns.
+ * 100% Reactive with Mono using Reactor .cache() for caching.
+ * Cache works correctly with Mono.empty() (products not found).
  */
 @Slf4j
 @Component
@@ -31,84 +26,56 @@ public class ProductApiClient {
 
     private final WebClient webClient;
 
-    @Value("${external-apis.product-service.timeout:5000}")
-    private int timeout;
+    // Manual cache using ConcurrentHashMap for Mono caching
+    private final Map<String, Mono<ProductApiDto>> productCache = new ConcurrentHashMap<>();
+    private final Map<String, Mono<List<String>>> similarIdsCache = new ConcurrentHashMap<>();
 
-    @Cacheable(
-            value = PRODUCTS_CACHE,
-            key = "#productId",
-            condition = "#productId != null && !#productId.isEmpty()",
-            unless = "#result == null")
-    @CircuitBreaker(name = "productService", fallbackMethod = "getProductByIdFallback")
-    @Retry(name = "productService")
     public Mono<ProductApiDto> getProductById(String productId) {
         if (productId == null || productId.isBlank()) {
             log.warn("getProductById called with null/empty productId");
             return Mono.empty();
         }
-        log.debug("Calling external API for product: {} (cache miss)", productId);
 
-        return webClient
-                .get()
-                .uri("/product/{productId}", productId)
-                .retrieve()
-                .bodyToMono(ProductApiDto.class)
-                .timeout(Duration.ofMillis(timeout))
-                .onErrorResume(WebClientResponseException.NotFound.class, e -> {
-                    log.warn("Product not found in external API: {}", productId);
-                    return Mono.empty();
-                })
-                .doOnError(e -> {
-                    if (!(e instanceof WebClientResponseException.NotFound)) {
-                        log.error("Error calling external API for product {}: {}",
-                            productId, e.getClass().getSimpleName());
-                    }
-                });
+        return productCache.computeIfAbsent(productId, id -> {
+            log.debug("Cache MISS - Calling external API for product: {}", id);
+
+            return webClient.get()
+                    .uri("/product/{productId}", id)
+                    .retrieve()
+                    .bodyToMono(ProductApiDto.class)
+                    .timeout(Duration.ofMillis(2000))
+                    .onErrorResume(WebClientResponseException.NotFound.class, e -> {
+                        log.debug("Product not found: {}", id);
+                        return Mono.empty();
+                    })
+                    .onErrorResume(e -> {
+                        log.debug("Error loading product {}: {}", id, e.getClass().getSimpleName());
+                        return Mono.empty();
+                    })
+                    .cache(Duration.ofMinutes(10));  // Cache for 10 minutes
+        });
     }
 
-    @Cacheable(
-            value = SIMILAR_IDS_CACHE,
-            key = "#productId",
-            condition = "#productId != null && !#productId.isEmpty()")
-    @CircuitBreaker(name = "productService", fallbackMethod = "getSimilarProductIdsFallback")
-    @Retry(name = "productService")
     public Mono<List<String>> getSimilarProductIds(String productId) {
         if (productId == null || productId.isBlank()) {
             log.warn("getSimilarProductIds called with null/empty productId");
             return Mono.just(List.of());
         }
-        log.debug("Calling external API for similar products of: {} (cache miss)", productId);
 
-        return webClient
-                .get()
-                .uri("/product/{productId}/similarids", productId)
-                .retrieve()
-                .bodyToMono(new ParameterizedTypeReference<List<String>>() {})
-                .timeout(Duration.ofMillis(timeout))
-                .defaultIfEmpty(List.of())
-                .doOnError(e -> log.error("Error calling external API for similar products {}: {}",
-                    productId, e.getClass().getSimpleName()));
-    }
+        return similarIdsCache.computeIfAbsent(productId, id -> {
+            log.debug("Cache MISS - Calling external API for similar products of: {}", id);
 
-    private Mono<ProductApiDto> getProductByIdFallback(String productId, Exception ex) {
-        if (ex.getClass().getSimpleName().contains("CallNotPermitted")) {
-            log.debug("Circuit OPEN - Skipping call to product: {}", productId);
-        } else if (ex instanceof TimeoutException) {
-            log.warn("Timeout calling product {}: API took >{}ms", productId, timeout);
-        } else {
-            log.warn("Fallback for product {}: {}", productId, ex.getClass().getSimpleName());
-        }
-        return Mono.empty();
-    }
-
-    private Mono<List<String>> getSimilarProductIdsFallback(String productId, Exception ex) {
-        if (ex.getClass().getSimpleName().contains("CallNotPermitted")) {
-            log.debug("Circuit OPEN - Skipping call to similar products: {}", productId);
-        } else if (ex instanceof TimeoutException) {
-            log.warn("Timeout calling similar products {}: API took >{}ms", productId, timeout);
-        } else {
-            log.warn("Fallback for similar products {}: {}", productId, ex.getClass().getSimpleName());
-        }
-        return Mono.just(List.of());
+            return webClient.get()
+                    .uri("/product/{productId}/similarids", id)
+                    .retrieve()
+                    .bodyToMono(new ParameterizedTypeReference<List<String>>() {})
+                    .timeout(Duration.ofMillis(2000))
+                    .onErrorResume(e -> {
+                        log.debug("Error loading similar products {}: {}", id, e.getClass().getSimpleName());
+                        return Mono.just(List.of());
+                    })
+                    .defaultIfEmpty(List.of())
+                    .cache(Duration.ofMinutes(10));  // Cache for 10 minutes
+        });
     }
 }

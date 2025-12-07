@@ -12,7 +12,7 @@ import java.util.List;
 
 /**
  * Secondary/Driven Adapter - Implements LoadSimilarProductIdsPort.
- * Calls external similar products API via HTTP.
+ * 100% reactive with Mono.
  */
 @Slf4j
 @Component
@@ -23,8 +23,8 @@ public class LoadSimilarProductIdsAdapter implements LoadSimilarProductIdsPort {
 
     @Override
     public Mono<List<ProductId>> loadSimilarProductIds(ProductId productId) {
-        log.debug("Loading similar product IDs via HTTP: {}", productId);
-        
+        log.debug("Loading similar product IDs reactively: {}", productId);
+
         return productApiClient.getSimilarProductIds(productId.value())
                 .map(ids -> ids.stream()
                         .filter(id -> id != null && !id.isBlank())

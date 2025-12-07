@@ -19,7 +19,7 @@ import java.util.List;
 
 /**
  * Primary/Driving Adapter - REST Controller.
- * Translates HTTP requests to use case calls.
+ * 100% reactive with Mono for WebFlux.
  */
 @Slf4j
 @Validated

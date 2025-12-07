@@ -12,7 +12,7 @@ import reactor.core.publisher.Mono;
 
 /**
  * Secondary/Driven Adapter - Implements LoadProductPort.
- * Calls external product API via HTTP.
+ * 100% reactive with Mono.
  */
 @Slf4j
 @Component
@@ -24,8 +24,8 @@ public class LoadProductAdapter implements LoadProductPort {
 
     @Override
     public Mono<Product> loadProduct(ProductId productId) {
-        log.debug("Loading product via HTTP: {}", productId);
-        
+        log.debug("Loading product reactively: {}", productId);
+
         return productApiClient.getProductById(productId.value())
                 .map(mapper::toDomain);
     }
