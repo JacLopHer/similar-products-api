@@ -28,6 +28,7 @@
         <spring-boot.version>3.2.1</spring-boot.version>
         <lombok.version>1.18.30</lombok.version>
         <resilience4j.version>2.2.0</resilience4j.version>
+        <slf4j.version>2.0.9</slf4j.version>
     </properties>
 
     <dependencyManagement>

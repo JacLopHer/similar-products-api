@@ -10,6 +10,7 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 
 import java.util.List;
+import java.util.Objects;
 import java.util.concurrent.CompletableFuture;
 
 /**
@@ -45,7 +46,7 @@ public class GetSimilarProductsService implements GetSimilarProductsUseCase {
         // Wait for all futures and collect results, filtering out not found products
         List<Product> similarProducts = futures.stream()
                 .map(CompletableFuture::join)
-                .filter(product -> product != null)
+                .filter(Objects::nonNull)
                 .toList();
         
         log.info("Returning {} similar products", similarProducts.size());
