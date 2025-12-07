@@ -17,10 +17,6 @@ import reactor.netty.resources.ConnectionProvider;
 import java.time.Duration;
 import java.util.concurrent.TimeUnit;
 
-/**
- * Configuration for WebClient used to call external APIs.
- * Optimized for high concurrency and throughput.
- */
 @Slf4j
 @Configuration
 public class WebClientConfig {

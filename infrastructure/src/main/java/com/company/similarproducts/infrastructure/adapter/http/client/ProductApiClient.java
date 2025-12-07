@@ -13,18 +13,11 @@ import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
-/**
- * HTTP Client for external Product API.
- * 100% Reactive with Mono.cache() - Simple and effective.
- * NO CompletableFuture, NO AsyncCache mixing.
- */
 @Slf4j
 @Component
 public class ProductApiClient {
 
     private final WebClient webClient;
-
-    // Simple ConcurrentHashMap to store cached Mono pipelines
     private final Map<String, Mono<ProductApiDto>> productCache = new ConcurrentHashMap<>();
     private final Map<String, Mono<List<String>>> similarIdsCache = new ConcurrentHashMap<>();
 

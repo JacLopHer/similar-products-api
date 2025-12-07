@@ -12,11 +12,6 @@ import reactor.core.publisher.Mono;
 
 import java.util.List;
 
-/**
- * Application Service implementing the GetSimilarProductsUseCase.
- * 100% reactive with Mono + Flux for high concurrency.
- * Uses flatMap with concurrency for parallel product loading.
- */
 @Slf4j
 @RequiredArgsConstructor
 public class GetSimilarProductsService implements GetSimilarProductsUseCase {

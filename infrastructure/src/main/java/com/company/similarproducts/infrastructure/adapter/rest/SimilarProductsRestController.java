@@ -17,10 +17,6 @@ import reactor.core.publisher.Mono;
 
 import java.util.List;
 
-/**
- * Primary/Driving Adapter - REST Controller.
- * 100% reactive with Mono for WebFlux.
- */
 @Slf4j
 @Validated
 @RestController

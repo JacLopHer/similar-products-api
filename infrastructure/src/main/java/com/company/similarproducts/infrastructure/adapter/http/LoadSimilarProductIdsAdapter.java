@@ -10,10 +10,6 @@ import reactor.core.publisher.Mono;
 
 import java.util.List;
 
-/**
- * Secondary/Driven Adapter - Implements LoadSimilarProductIdsPort.
- * 100% reactive with Mono.
- */
 @Slf4j
 @Component
 @RequiredArgsConstructor

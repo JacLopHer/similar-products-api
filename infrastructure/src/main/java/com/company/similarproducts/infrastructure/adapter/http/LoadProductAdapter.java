@@ -10,10 +10,6 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
 import reactor.core.publisher.Mono;
 
-/**
- * Secondary/Driven Adapter - Implements LoadProductPort.
- * 100% reactive with Mono.
- */
 @Slf4j
 @Component
 @RequiredArgsConstructor
