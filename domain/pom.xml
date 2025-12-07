@@ -24,6 +24,12 @@
             <optional>true</optional>
         </dependency>
         
+        <!-- Reactor Core for reactive types (Mono/Flux) -->
+        <dependency>
+            <groupId>io.projectreactor</groupId>
+            <artifactId>reactor-core</artifactId>
+        </dependency>
+
         <!-- Testing -->
         <dependency>
             <groupId>org.junit.jupiter</groupId>

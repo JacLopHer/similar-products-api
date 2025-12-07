@@ -11,10 +11,11 @@ import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import reactor.core.publisher.Mono;
+import reactor.test.StepVerifier;
 
 import java.math.BigDecimal;
 import java.util.List;
-import java.util.Optional;
 
 import static org.assertj.core.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.any;
@@ -55,13 +56,13 @@ class GetSimilarProductsServiceTest {
         Product similarProduct1 = createProduct("2", "Similar Product 1", "90.00");
         Product similarProduct2 = createProduct("3", "Similar Product 2", "110.00");
 
-        when(loadProductPort.loadProduct(productId)).thenReturn(Optional.of(mainProduct));
-        when(loadSimilarProductIdsPort.loadSimilarProductIds(productId)).thenReturn(similarIds);
-        when(loadProductPort.loadProduct(similarId1)).thenReturn(Optional.of(similarProduct1));
-        when(loadProductPort.loadProduct(similarId2)).thenReturn(Optional.of(similarProduct2));
+        when(loadProductPort.loadProduct(productId)).thenReturn(Mono.just(mainProduct));
+        when(loadSimilarProductIdsPort.loadSimilarProductIds(productId)).thenReturn(Mono.just(similarIds));
+        when(loadProductPort.loadProduct(similarId1)).thenReturn(Mono.just(similarProduct1));
+        when(loadProductPort.loadProduct(similarId2)).thenReturn(Mono.just(similarProduct2));
 
         // When
-        List<Product> result = service.getSimilarProducts(productId);
+        List<Product> result = service.getSimilarProducts(productId).block();
 
         // Then
         assertThat(result)
@@ -81,11 +82,11 @@ class GetSimilarProductsServiceTest {
         ProductId productId = new ProductId("1");
         Product mainProduct = createProduct("1", "Main Product", "100.00");
 
-        when(loadProductPort.loadProduct(productId)).thenReturn(Optional.of(mainProduct));
-        when(loadSimilarProductIdsPort.loadSimilarProductIds(productId)).thenReturn(List.of());
+        when(loadProductPort.loadProduct(productId)).thenReturn(Mono.just(mainProduct));
+        when(loadSimilarProductIdsPort.loadSimilarProductIds(productId)).thenReturn(Mono.just(List.of()));
 
         // When
-        List<Product> result = service.getSimilarProducts(productId);
+        List<Product> result = service.getSimilarProducts(productId).block();
 
         // Then
         assertThat(result).isEmpty();
@@ -102,13 +103,14 @@ class GetSimilarProductsServiceTest {
         // Given
         ProductId productId = new ProductId("999");
 
-        when(loadProductPort.loadProduct(productId)).thenReturn(Optional.empty());
+        when(loadProductPort.loadProduct(productId)).thenReturn(Mono.empty());
 
         // When / Then
-        assertThatThrownBy(() -> service.getSimilarProducts(productId))
-                .isInstanceOf(ProductNotFoundException.class)
-                .hasMessageContaining("Product not found")
-                .hasMessageContaining("999");
+        StepVerifier.create(service.getSimilarProducts(productId))
+                .expectErrorMatches(e -> e instanceof ProductNotFoundException &&
+                        e.getMessage().contains("Product not found") &&
+                        e.getMessage().contains("999"))
+                .verify();
 
         verify(loadProductPort).loadProduct(productId);
         verify(loadSimilarProductIdsPort, never()).loadSimilarProductIds(any());
@@ -130,14 +132,14 @@ class GetSimilarProductsServiceTest {
         // similarId2 not found
         Product similarProduct3 = createProduct("4", "Similar Product 3", "120.00");
 
-        when(loadProductPort.loadProduct(productId)).thenReturn(Optional.of(mainProduct));
-        when(loadSimilarProductIdsPort.loadSimilarProductIds(productId)).thenReturn(similarIds);
-        when(loadProductPort.loadProduct(similarId1)).thenReturn(Optional.of(similarProduct1));
-        when(loadProductPort.loadProduct(similarId2)).thenReturn(Optional.empty());
-        when(loadProductPort.loadProduct(similarId3)).thenReturn(Optional.of(similarProduct3));
+        when(loadProductPort.loadProduct(productId)).thenReturn(Mono.just(mainProduct));
+        when(loadSimilarProductIdsPort.loadSimilarProductIds(productId)).thenReturn(Mono.just(similarIds));
+        when(loadProductPort.loadProduct(similarId1)).thenReturn(Mono.just(similarProduct1));
+        when(loadProductPort.loadProduct(similarId2)).thenReturn(Mono.empty());
+        when(loadProductPort.loadProduct(similarId3)).thenReturn(Mono.just(similarProduct3));
 
         // When
-        List<Product> result = service.getSimilarProducts(productId);
+        List<Product> result = service.getSimilarProducts(productId).block();
 
         // Then
         assertThat(result)
@@ -162,12 +164,12 @@ class GetSimilarProductsServiceTest {
 
         Product similarProduct = createProduct("2", "Similar Product", "95.00");
 
-        when(loadProductPort.loadProduct(productId)).thenReturn(Optional.of(mainProduct));
-        when(loadSimilarProductIdsPort.loadSimilarProductIds(productId)).thenReturn(similarIds);
-        when(loadProductPort.loadProduct(similarId)).thenReturn(Optional.of(similarProduct));
+        when(loadProductPort.loadProduct(productId)).thenReturn(Mono.just(mainProduct));
+        when(loadSimilarProductIdsPort.loadSimilarProductIds(productId)).thenReturn(Mono.just(similarIds));
+        when(loadProductPort.loadProduct(similarId)).thenReturn(Mono.just(similarProduct));
 
         // When
-        List<Product> result = service.getSimilarProducts(productId);
+        List<Product> result = service.getSimilarProducts(productId).block();
 
         // Then
         assertThat(result)
@@ -189,16 +191,16 @@ class GetSimilarProductsServiceTest {
                 new ProductId("5")
         );
 
-        when(loadProductPort.loadProduct(productId)).thenReturn(Optional.of(mainProduct));
-        when(loadSimilarProductIdsPort.loadSimilarProductIds(productId)).thenReturn(similarIds);
+        when(loadProductPort.loadProduct(productId)).thenReturn(Mono.just(mainProduct));
+        when(loadSimilarProductIdsPort.loadSimilarProductIds(productId)).thenReturn(Mono.just(similarIds));
 
         similarIds.forEach(id ->
             when(loadProductPort.loadProduct(id))
-                .thenReturn(Optional.of(createProduct(id.value(), "Product " + id.value(), "100.00")))
+                .thenReturn(Mono.just(createProduct(id.value(), "Product " + id.value(), "100.00")))
         );
 
         // When
-        List<Product> result = service.getSimilarProducts(productId);
+        List<Product> result = service.getSimilarProducts(productId).block();
 
         // Then
         assertThat(result).hasSize(4);
@@ -227,11 +229,11 @@ class GetSimilarProductsServiceTest {
         ProductId productId = new ProductId("1");
         Product mainProduct = createProduct("1", "Main Product", "100.00");
 
-        when(loadProductPort.loadProduct(productId)).thenReturn(Optional.of(mainProduct));
-        when(loadSimilarProductIdsPort.loadSimilarProductIds(productId)).thenReturn(List.of());
+        when(loadProductPort.loadProduct(productId)).thenReturn(Mono.just(mainProduct));
+        when(loadSimilarProductIdsPort.loadSimilarProductIds(productId)).thenReturn(Mono.just(List.of()));
 
         // When
-        List<Product> result = service.getSimilarProducts(productId);
+        List<Product> result = service.getSimilarProducts(productId).block();
 
         // Then
         assertThat(result).isNotNull();

@@ -2,6 +2,7 @@ package com.company.similarproducts.domain.port;
 
 import com.company.similarproducts.domain.model.Product;
 import com.company.similarproducts.domain.model.ProductId;
+import reactor.core.publisher.Mono;
 
 import java.util.List;
 
@@ -15,8 +16,8 @@ public interface GetSimilarProductsUseCase {
      * Gets similar products for a given product ID.
      *
      * @param productId the product identifier
-     * @return list of similar products ordered by similarity
+     * @return Mono with list of similar products ordered by similarity
      * @throws com.company.similarproducts.domain.exception.ProductNotFoundException if product not found
      */
-    List<Product> getSimilarProducts(ProductId productId);
+    Mono<List<Product>> getSimilarProducts(ProductId productId);
 }
