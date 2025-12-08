@@ -1,0 +1,5 @@
+{
+  "request": { "method": "GET", "urlPath": "/product/2/similarids" },
+  "response": { "status": 200, "body": "[]", "headers": { "Content-Type": "application/json" } }
+}
+

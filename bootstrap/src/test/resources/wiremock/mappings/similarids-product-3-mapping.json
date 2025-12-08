@@ -1,0 +1,5 @@
+{
+  "request": { "method": "GET", "urlPath": "/product/3/similarids" },
+  "response": { "status": 500, "body": "{\"error\":\"internal\"}", "headers": { "Content-Type": "application/json" } }
+}
+

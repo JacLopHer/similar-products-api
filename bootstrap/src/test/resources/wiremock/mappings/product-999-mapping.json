@@ -1,0 +1,5 @@
+{
+  "request": { "method": "GET", "url": "/product/999" },
+  "response": { "status": 404, "body": "{\"message\":\"Product not found\"}", "headers": { "Content-Type": "application/json" } }
+}
+
