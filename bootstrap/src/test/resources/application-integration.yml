@@ -1,0 +1,15 @@
+server:
+  port: 0
+external:
+  apis:
+    product-service:
+      base-url: ${EXTERNAL_PRODUCT_SERVICE_BASE_URL:http://localhost:3001}
+
+spring:
+  main:
+    allow-bean-definition-overriding: true
+
+logging:
+  level:
+    org.springframework.web: ERROR
+
