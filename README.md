@@ -220,6 +220,42 @@ View results in GitHub Actions after each commit.
 
 Key settings in `bootstrap/src/main/resources/application.yml`:
 
+```yaml
+# Server configuration
+server:
+  port: 5000
+
+# Product service configuration  
+product:
+  service:
+    base-url: http://localhost:3001
+
+# Similar products service configuration
+similar-products:
+  service:
+    base-url: http://localhost:3002
+
+# Circuit breaker configuration
+resilience4j:
+  circuit-breaker:
+    instances:
+      productService:
+        register-health-indicator: true
+        failure-rate-threshold: 50
+        wait-duration-in-open-state: 5s
+        automatic-transition-from-open-to-half-open-enabled: true
+```
+
+## Available Scripts
+
+Essential development scripts located in `scripts/`:
+
+- **`run-all-tests.ps1`** - Execute complete test suite
+- **`run-performance-tests.ps1`** - Run K6 performance tests  
+- **`run-production-tests.ps1`** - Production environment testing
+- **`setup-grafana-dashboard.ps1`** - Setup monitoring dashboard
+- **`smoke-tests.ps1`** - Post-deployment verification tests
+
 ## License
 
 Technical test project.
