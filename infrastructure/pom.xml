@@ -8,7 +8,7 @@
     <parent>
         <groupId>com.company</groupId>
         <artifactId>similar-products-api</artifactId>
-        <version>1.0.1-SNAPSHOT</version>
+        <version>1.0.1</version>
     </parent>
 
     <artifactId>infrastructure</artifactId>
