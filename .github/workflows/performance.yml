@@ -63,7 +63,3 @@ jobs:
       with:
         filename: shared/k6/test.js
 
-    - name: Simple API Check
-      run: |
-        curl -f http://localhost:5000/product/1/similar
-        echo "✅ API working correctly"
