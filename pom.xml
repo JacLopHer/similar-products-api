@@ -34,6 +34,7 @@
         <maven-surefire-plugin.version>3.2.5</maven-surefire-plugin.version>
         <maven-failsafe-plugin.version>3.0.0</maven-failsafe-plugin.version>
         <maven-antrun-plugin.version>3.1.0</maven-antrun-plugin.version>
+        <gitflow-maven-plugin.version>1.20.0</gitflow-maven-plugin.version>
 
         <!-- Test Dependencies Versions -->
         <wiremock.version>3.0.1</wiremock.version>
@@ -126,7 +127,67 @@
                         <commitIdGenerationMode>full</commitIdGenerationMode>
                     </configuration>
                 </plugin>
+
+                <!-- GitFlow Maven Plugin for Professional Release Management -->
+                <plugin>
+                    <groupId>com.amashchenko.maven.plugin</groupId>
+                    <artifactId>gitflow-maven-plugin</artifactId>
+                    <version>${gitflow-maven-plugin.version}</version>
+                    <configuration>
+                        <!-- GitFlow branch names configuration -->
+                        <gitFlowConfig>
+                            <productionBranch>master</productionBranch>
+                            <developmentBranch>develop</developmentBranch>
+                            <featureBranchPrefix>feature/</featureBranchPrefix>
+                            <releaseBranchPrefix>release/</releaseBranchPrefix>
+                            <hotfixBranchPrefix>hotfix/</hotfixBranchPrefix>
+                            <supportBranchPrefix>support/</supportBranchPrefix>
+                            <versionTagPrefix>v</versionTagPrefix>
+                        </gitFlowConfig>
+
+                        <!-- Release configuration -->
+                        <releaseRebase>false</releaseRebase>
+                        <keepBranch>false</keepBranch>
+                        <pushRemote>true</pushRemote>
+
+                        <!-- Version management -->
+                        <skipTestProject>false</skipTestProject>
+                        <allowSnapshots>false</allowSnapshots>
+
+                        <!-- Commit messages -->
+                        <commitMessages>
+                            <releaseStartMessage>release: start release of @{version}</releaseStartMessage>
+                            <releaseFinishMessage>release: finish release of @{version}</releaseFinishMessage>
+                            <releaseVersionUpdateMessage>release: update version to @{version}</releaseVersionUpdateMessage>
+
+                            <featureStartMessage>feature: start feature @{featureName}</featureStartMessage>
+                            <featureFinishMessage>feature: finish feature @{featureName}</featureFinishMessage>
+
+                            <hotfixStartMessage>hotfix: start hotfix @{version}</hotfixStartMessage>
+                            <hotfixFinishMessage>hotfix: finish hotfix @{version}</hotfixFinishMessage>
+                            <hotfixVersionUpdateMessage>hotfix: update version to @{version}</hotfixVersionUpdateMessage>
+                        </commitMessages>
+                    </configuration>
+                </plugin>
             </plugins>
         </pluginManagement>
     </build>
+
+    <!-- GitFlow Release Management -->
+    <profiles>
+        <profile>
+            <id>gitflow</id>
+            <activation>
+                <activeByDefault>true</activeByDefault>
+            </activation>
+            <build>
+                <plugins>
+                    <plugin>
+                        <groupId>com.amashchenko.maven.plugin</groupId>
+                        <artifactId>gitflow-maven-plugin</artifactId>
+                    </plugin>
+                </plugins>
+            </build>
+        </profile>
+    </profiles>
 </project>
