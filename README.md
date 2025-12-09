@@ -292,9 +292,12 @@ Essential development scripts located in `scripts/`:
 - **`run-production-tests.ps1`** - Production environment testing
 - **`setup-grafana-dashboard.ps1`** - Setup monitoring dashboard
 - **`smoke-tests.ps1`** - Post-deployment verification tests
-- **`prepare-release.ps1`** - Create and prepare release branch from develop
-- **`gitflow-release.ps1`** - Create official release on master branch
-- **`release.ps1`** - Simple release management script (legacy)
+
+**Note:** Release management is now handled by GitFlow Maven Plugin:
+```bash
+mvn gitflow:release-start -DreleaseVersion=X.Y.Z
+mvn gitflow:release-finish -DreleaseVersion=X.Y.Z
+```
 
 ## Release Management
 
@@ -307,71 +310,78 @@ This project follows **GitFlow** branching strategy:
 - **`release/*`** - Release preparation branches
 - **`hotfix/*`** - Emergency fixes for production
 
-### GitFlow Release Process (Correct & Simplified)
+### GitFlow Release Process (Professional Maven Plugin)
 
-This project follows a simplified GitFlow strategy:
+This project uses the **GitFlow Maven Plugin** for professional release management.
 
 #### Complete Release Flow
 
 ```bash
-# 1. INTEGRATE CHANGES TO DEVELOP
+# 1. INTEGRATE CHANGES TO DEVELOP (first commit changes)
 git checkout develop
 git add .
 git commit -m "feat: add version management and CI/CD improvements"
 git push origin develop
 
-# 2. PREPARE RELEASE (scripts handle git checkout automatically)
-.\scripts\prepare-release.ps1 -Version "1.0.0"
-# This script automatically:
-# - Switches to master branch
-# - Creates release/v1.0.0 FROM master
-# - Merges develop INTO release branch
-# - Updates version to 1.0.0
-# - Runs tests and builds package
+# 2. START RELEASE (creates release branch and updates version)
+mvn gitflow:release-start -DreleaseVersion=1.0.0 -DdevelopmentVersion=1.1.0-SNAPSHOT
 
-# 3. PUSH RELEASE BRANCH AND CREATE PR
-git push origin release/v1.0.0
-# Create PR: release/v1.0.0 → master
+# 3. OPTIONAL: Make final adjustments to release branch
+# (run tests, fix last-minute issues, etc.)
 
-# 4. MERGE PR AND FINALIZE (scripts handle git checkout automatically)
-# (After PR is merged through GitHub)
-.\scripts\gitflow-release.ps1 -Version "1.0.0"
-# This script automatically:
-# - Switches to master branch 
-# - Creates git tag v1.0.0
+# 4. FINISH RELEASE (merges to master, tags, merges back to develop)
+mvn gitflow:release-finish -DreleaseVersion=1.0.0 -DdevelopmentVersion=1.1.0-SNAPSHOT
 
-# 5. PUSH TAG
+# 5. PUSH EVERYTHING
+git push origin master
+git push origin develop  
 git push origin v1.0.0
-
-# 6. CLEANUP
-git branch -d release/v1.0.0
 ```
 
-#### Why This Process Works
+#### Available GitFlow Commands
 
-- ✅ **Stable base**: Release branch starts from stable master
-- ✅ **Feature integration**: Develop is merged into release branch
-- ✅ **PR review**: Release → master goes through PR process
-- ✅ **Clean finish**: No complex merge-back logic
-- ✅ **Automated release**: GitHub Actions triggers on tag push
+**Release Management:**
+```bash
+# Start a release
+mvn gitflow:release-start -DreleaseVersion=1.1.0
 
-#### Available Scripts
+# Finish a release
+mvn gitflow:release-finish -DreleaseVersion=1.1.0
 
-- **`prepare-release.ps1`** - Creates release branch (master→release←develop)
-- **`gitflow-release.ps1`** - Finalizes release (creates tag after PR merge)
-- **`release.ps1`** - Legacy simple release script
-
-#### Script Usage
-
-```powershell
-# Step 1: Prepare release branch
-.\scripts\prepare-release.ps1 -Version "1.0.0" -DryRun  # Test first
-.\scripts\prepare-release.ps1 -Version "1.0.0"         # Real execution
-
-# Step 2: After PR merge, finalize release  
-.\scripts\gitflow-release.ps1 -Version "1.0.0" -DryRun  # Test first
-.\scripts\gitflow-release.ps1 -Version "1.0.0"         # Real execution
+# List current releases
+mvn gitflow:release-list
 ```
+
+**Feature Management:**
+```bash
+# Start a feature
+mvn gitflow:feature-start -DfeatureName=my-feature
+
+# Finish a feature (merges to develop)
+mvn gitflow:feature-finish -DfeatureName=my-feature
+
+# List features
+mvn gitflow:feature-list
+```
+
+**Hotfix Management:**
+```bash
+# Start a hotfix from master
+mvn gitflow:hotfix-start -DreleaseVersion=1.0.1
+
+# Finish a hotfix
+mvn gitflow:hotfix-finish -DreleaseVersion=1.0.1
+```
+
+#### Why GitFlow Maven Plugin is Better
+
+✅ **Industry Standard** - Well-tested and widely used  
+✅ **Automatic Version Management** - Updates all POMs correctly  
+✅ **Complete GitFlow Support** - Features, releases, hotfixes  
+✅ **Rollback Support** - Can abort operations safely  
+✅ **IntelliJ Integration** - Available in Maven tool window  
+✅ **Consistent Workflow** - Enforces proper GitFlow process  
+✅ **Multi-module Support** - Handles complex Maven projects
 
 #### GitHub Actions Workflows
 
