@@ -1,4 +1,4 @@
-# Smoke Tests para Post-Deployment
+# Smoke Tests for Post-Deployment
 param(
     [Parameter(Mandatory=$true)]
     [string]$TargetUrl = "http://localhost:5000",
@@ -97,13 +97,13 @@ foreach ($test in $tests) {
 }
 
 Write-Host ""
-Write-Host "RESULTADOS SMOKE TESTS:" -ForegroundColor Yellow
-Write-Host "=======================" -ForegroundColor Yellow
+Write-Host "SMOKE TESTS RESULTS:" -ForegroundColor Yellow
+Write-Host "====================" -ForegroundColor Yellow
 Write-Host "Passed: $passed" -ForegroundColor Green
 Write-Host "Failed: $failed" -ForegroundColor Red
 Write-Host "Success Rate: $([math]::Round(($passed / ($passed + $failed)) * 100, 1))%" -ForegroundColor White
 
-# Generar reporte JSON
+# Generate JSON report
 $smokeReport = @{
     Timestamp = (Get-Date).ToString("yyyy-MM-dd HH:mm:ss")
     Target = $TargetUrl
@@ -119,12 +119,12 @@ $reportFile = "smoke-test-report-$(Get-Date -Format 'yyyyMMdd-HHmmss').json"
 $smokeReport | ConvertTo-Json -Depth 3 | Out-File $reportFile
 
 Write-Host ""
-Write-Host "Reporte generado: $reportFile" -ForegroundColor Blue
+Write-Host "Report generated: $reportFile" -ForegroundColor Blue
 
 if ($failed -gt 0) {
     Write-Host ""
     Write-Host "SMOKE TESTS FAILED - Deployment may have issues" -ForegroundColor Red
-    Write-Host "Revisa los logs y considera un rollback" -ForegroundColor Yellow
+    Write-Host "Check logs and consider a rollback" -ForegroundColor Yellow
     exit 1
 } else {
     Write-Host ""

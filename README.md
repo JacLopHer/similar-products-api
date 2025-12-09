@@ -60,16 +60,27 @@ mvn clean package
 
 ## Running the Application
 
+**Server Configuration (from application.yml):**
+- **Port**: 5000
+- **Connection Timeout**: 20s  
+- **Idle Timeout**: 60s
+- **External API Base URL**: http://localhost:3001
+- **API Timeout**: 2000ms
+
 ```bash
 # From root
 cd bootstrap
 mvn spring-boot:run
 
-# Or run JAR
-java -jar bootstrap/target/bootstrap-1.0.0-SNAPSHOT.jar
+# Or run JAR directly
+java -jar bootstrap/target/bootstrap-1.0.0.jar
 ```
 
-Application runs on **port 5000**.
+**Available Endpoints:**
+- **Main API**: http://localhost:5000/product/{id}/similar
+- **Version Info**: http://localhost:5000/api/v1/version
+- **Health Check**: http://localhost:5000/actuator/health
+- **Build Info**: http://localhost:5000/actuator/info
 
 ## Testing with Mocks
 
@@ -79,10 +90,17 @@ Start mock services (from `backendDevTest` directory):
 docker-compose up -d simulado influxdb grafana
 ```
 
-Test the endpoint:
+Test the endpoints:
 
 ```bash
+# Test main API
 curl http://localhost:5000/product/1/similar
+
+# Test version endpoint
+curl http://localhost:5000/api/v1/version
+
+# Test health check
+curl http://localhost:5000/actuator/health
 ```
 
 ## API Contract
@@ -90,6 +108,35 @@ curl http://localhost:5000/product/1/similar
 ### GET /product/{productId}/similar
 
 Returns similar products details.
+
+### GET /api/v1/version
+
+Returns application version and build information.
+
+**Success (200)**:
+```json
+{
+  "application": "Similar Products API",
+  "version": "1.0.0",
+  "buildTime": "2025-12-09T19:25:44.123Z",
+  "gitCommit": "abc123f",
+  "gitBranch": "main"
+}
+```
+
+### GET /api/v1/info
+
+Returns comprehensive build and git information.
+
+### GET /actuator/health
+
+Returns application health status.
+
+### GET /actuator/info
+
+Returns build information via Spring Boot Actuator.
+
+## Product Endpoint Response
 
 **Success (200)**:
 ```json
@@ -255,6 +302,135 @@ Essential development scripts located in `scripts/`:
 - **`run-production-tests.ps1`** - Production environment testing
 - **`setup-grafana-dashboard.ps1`** - Setup monitoring dashboard
 - **`smoke-tests.ps1`** - Post-deployment verification tests
+- **`release.ps1`** - Simple release management script
+- **`gitflow-release.ps1`** - Complete GitFlow release automation
+
+## Release Management
+
+### GitFlow Process
+
+This project follows **GitFlow** branching strategy:
+- **`master`** - Production-ready code, only releases
+- **`develop`** - Integration branch for features
+- **`feature/*`** - Feature development branches
+- **`release/*`** - Release preparation branches
+- **`hotfix/*`** - Emergency fixes for production
+
+### Automated GitFlow Release
+
+#### Option 1: Complete GitFlow Automation (Recommended)
+
+```powershell
+# Full GitFlow release process in one command
+.\scripts\gitflow-release.ps1 -Version "1.1.0"
+
+# Dry run first to see what will happen
+.\scripts\gitflow-release.ps1 -Version "1.1.0" -DryRun
+```
+
+**This script automatically:**
+1. ✅ Creates release branch from `develop`
+2. ✅ Updates version in all POM files
+3. ✅ Runs complete test suite
+4. ✅ Builds and packages application
+5. ✅ Merges to `master` with proper tag
+6. ✅ Merges back to `develop`
+7. ✅ Cleans up release branch
+
+#### Option 2: Manual GitFlow Process
+
+```bash
+# Current situation: You have changes that need to go to develop first
+git checkout develop
+git add .
+git commit -m "feat: add version management and CI/CD improvements"
+git push origin develop
+
+# Then create release from develop
+git checkout -b release/v1.0.0
+.\scripts\release.ps1 -Version "1.0.0"
+
+# Merge to master
+git checkout master
+git merge --no-ff release/v1.0.0
+git push origin master
+git push origin v1.0.0
+
+# Merge back to develop
+git checkout develop  
+git merge --no-ff release/v1.0.0
+git push origin develop
+
+# Clean up
+git branch -d release/v1.0.0
+```
+
+#### GitHub Actions Workflows
+
+- **Pull Request Workflow** (`.github/workflows/performance.yml`):
+  - Triggers only on Pull Requests to `master` or `develop`
+  - Runs tests and performance validation
+  - Manual trigger available via `workflow_dispatch`
+
+- **Release Workflow** (`.github/workflows/release.yml`):
+  - Triggers on version tags (`v*.*.*`)
+  - Creates GitHub Release with JAR artifact
+  - Runs quality checks and performance tests
+  - Manual trigger available with version input
+
+#### GitFlow Release Process
+
+**For feature development:**
+```bash
+# 1. Create feature branch from develop
+git checkout develop
+git pull origin develop
+git checkout -b feature/your-feature-name
+
+# 2. Develop and test
+# ... make your changes ...
+
+# 3. Create PR to develop branch
+git push origin feature/your-feature-name
+```
+
+**For releases (from develop to master):**
+```bash
+# 1. Create release branch from develop
+git checkout develop
+git pull origin develop
+git checkout -b release/v1.1.0
+
+# 2. Prepare release (run release script)
+.\scripts\release.ps1 -Version "1.1.0"
+
+# 3. Merge to master and tag
+git checkout master
+git merge release/v1.1.0
+git push origin master
+git push origin v1.1.0
+
+# 4. Merge back to develop
+git checkout develop
+git merge release/v1.1.0
+git push origin develop
+```
+
+#### Version Information
+
+The application exposes version information through multiple endpoints:
+
+- `GET /api/v1/version` - Clean JSON version info
+- `GET /api/v1/info` - Comprehensive build and git information  
+- `GET /actuator/info` - Spring Boot Actuator build info
+- `GET /actuator/health` - Health status
+
+#### Versioning Strategy
+
+- **Semantic Versioning**: `MAJOR.MINOR.PATCH`
+- **Git Tags**: Automatically created with `v` prefix (`v1.0.0`)
+- **Build Information**: Includes Git commit, branch, and build timestamp
+- **JAR Naming**: `similar-products-api-{version}.jar`
 
 ## License
 

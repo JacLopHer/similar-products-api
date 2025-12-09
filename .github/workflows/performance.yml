@@ -1,10 +1,11 @@
 name: Build and Performance Tests
 
 on:
-  push:
-    branches: [ '*' ]
   pull_request:
-    branches: [ '*' ]
+    branches: [ master, develop ]
+    types: [opened, synchronize, reopened]
+  # Allow manual trigger for testing
+  workflow_dispatch:
 
 jobs:
   build:
