@@ -292,6 +292,7 @@ Essential development scripts located in `scripts/`:
 - **`run-production-tests.ps1`** - Production environment testing
 - **`setup-grafana-dashboard.ps1`** - Setup monitoring dashboard
 - **`smoke-tests.ps1`** - Post-deployment verification tests
+- **`gitflow-help.ps1`** - Quick reference for GitFlow Maven Plugin
 
 **Note:** Release management is now handled by GitFlow Maven Plugin:
 ```bash
