@@ -1,0 +1,125 @@
+name: Release
+
+on:
+  push:
+    tags:
+      - 'v*.*.*'
+  workflow_dispatch:
+    inputs:
+      version:
+        description: 'Release version (e.g., 1.0.0)'
+        required: true
+        default: '1.0.0'
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+
+    steps:
+    - uses: actions/checkout@v4
+      with:
+        fetch-depth: 0
+
+    - name: Set up JDK 17
+      uses: actions/setup-java@v4
+      with:
+        java-version: '17'
+        distribution: 'temurin'
+
+    - name: Cache Maven packages
+      uses: actions/cache@v4
+      with:
+        path: ~/.m2
+        key: ${{ runner.os }}-m2-${{ hashFiles('**/pom.xml') }}
+
+    - name: Run full test suite
+      run: mvn clean test
+
+    - name: Build application
+      run: mvn clean package -DskipTests
+
+    - name: Extract version from tag
+      id: get_version
+      run: |
+        if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
+          echo "VERSION=${{ github.event.inputs.version }}" >> $GITHUB_OUTPUT
+        else
+          echo "VERSION=${GITHUB_REF#refs/tags/v}" >> $GITHUB_OUTPUT
+        fi
+
+    - name: Create Release
+      id: create_release
+      uses: actions/create-release@v1
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      with:
+        tag_name: v${{ steps.get_version.outputs.VERSION }}
+        release_name: Release ${{ steps.get_version.outputs.VERSION }}
+        body: |
+          ## Changes in v${{ steps.get_version.outputs.VERSION }}
+          
+          ### Features
+          - Similar Products API with Hexagonal Architecture
+          - High-performance reactive implementation (320+ RPS)
+          - Circuit breaker and resilience patterns
+          - Comprehensive monitoring and health checks
+          
+          ### Technical Details
+          - Java 17 & Spring Boot 3.2.1
+          - Multi-module Maven architecture
+          - Full test coverage including performance tests
+          - Production-ready configuration
+          
+          ### API Endpoints
+          - `GET /product/{id}/similar` - Get similar products
+          - `GET /api/v1/version` - Application version info
+          - `GET /actuator/health` - Health check
+          - `GET /actuator/info` - Build and Git information
+        draft: false
+        prerelease: false
+
+    - name: Upload JAR
+      uses: actions/upload-release-asset@v1
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      with:
+        upload_url: ${{ steps.create_release.outputs.upload_url }}
+        asset_path: ./bootstrap/target/bootstrap-${{ steps.get_version.outputs.VERSION }}.jar
+        asset_name: similar-products-api-${{ steps.get_version.outputs.VERSION }}.jar
+        asset_content_type: application/java-archive
+
+  quality-check:
+    runs-on: ubuntu-latest
+    needs: release
+
+    steps:
+    - uses: actions/checkout@v4
+
+    - name: Set up JDK 17
+      uses: actions/setup-java@v4
+      with:
+        java-version: '17'
+        distribution: 'temurin'
+
+    - name: Cache Maven packages
+      uses: actions/cache@v4
+      with:
+        path: ~/.m2
+        key: ${{ runner.os }}-m2-${{ hashFiles('**/pom.xml') }}
+
+    - name: Build and start application
+      run: |
+        mvn clean package -DskipTests
+        java -jar bootstrap/target/*.jar &
+        sleep 30
+
+    - name: Run Release Quality Tests
+      uses: grafana/k6-action@v0.3.1
+      with:
+        filename: shared/k6/test.js
+
+    - name: Test version endpoint
+      run: |
+        curl -f http://localhost:5000/api/v1/version
+        curl -f http://localhost:5000/actuator/health
+        curl -f http://localhost:5000/actuator/info

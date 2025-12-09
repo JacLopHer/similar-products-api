@@ -4,37 +4,6 @@
 
 ## Architecture
 
-### Traditional Hexagonal Structure
-
-```
-┌─────────────────────────────────────────────────┐
-│            PRIMARY ADAPTERS (IN)                │
-│         infrastructure/adapter/rest             │
-│              (REST Controllers)                 │
-└────────────────┬────────────────────────────────┘
-                 │
-                 ▼
-      ┌──────────────────────┐
-      │   APPLICATION LAYER   │
-      │  (Use Case Services)  │
-      │   Pure Java Logic     │
-      └──────────┬────────────┘
-                 │
-                 ▼
-         ┌───────────────┐
-         │  DOMAIN CORE  │
-         │ Model + Ports │
-         │ (Interfaces)  │
-         └───────┬───────┘
-                 │
-                 ▼
-┌────────────────────────────────────────────────┐
-│          SECONDARY ADAPTERS (OUT)              │
-│       infrastructure/adapter/http              │
-│          (HTTP Clients, DB, etc)               │
-└────────────────────────────────────────────────┘
-```
-
 ### Module Structure
 
 ```
@@ -91,16 +60,27 @@ mvn clean package
 
 ## Running the Application
 
+**Server Configuration (from application.yml):**
+- **Port**: 5000
+- **Connection Timeout**: 20s  
+- **Idle Timeout**: 60s
+- **External API Base URL**: http://localhost:3001
+- **API Timeout**: 2000ms
+
 ```bash
 # From root
 cd bootstrap
 mvn spring-boot:run
 
-# Or run JAR
-java -jar bootstrap/target/bootstrap-1.0.0-SNAPSHOT.jar
+# Or run JAR directly
+java -jar bootstrap/target/bootstrap-1.0.0.jar
 ```
 
-Application runs on **port 5000**.
+**Available Endpoints:**
+- **Main API**: http://localhost:5000/product/{id}/similar
+- **Version Info**: http://localhost:5000/api/v1/version
+- **Health Check**: http://localhost:5000/actuator/health
+- **Build Info**: http://localhost:5000/actuator/info
 
 ## Testing with Mocks
 
@@ -110,10 +90,17 @@ Start mock services (from `backendDevTest` directory):
 docker-compose up -d simulado influxdb grafana
 ```
 
-Test the endpoint:
+Test the endpoints:
 
 ```bash
+# Test main API
 curl http://localhost:5000/product/1/similar
+
+# Test version endpoint
+curl http://localhost:5000/api/v1/version
+
+# Test health check
+curl http://localhost:5000/actuator/health
 ```
 
 ## API Contract
@@ -121,6 +108,35 @@ curl http://localhost:5000/product/1/similar
 ### GET /product/{productId}/similar
 
 Returns similar products details.
+
+### GET /api/v1/version
+
+Returns application version and build information.
+
+**Success (200)**:
+```json
+{
+  "application": "Similar Products API",
+  "version": "1.0.0",
+  "buildTime": "2025-12-09T19:25:44.123Z",
+  "gitCommit": "abc123f",
+  "gitBranch": "main"
+}
+```
+
+### GET /api/v1/info
+
+Returns comprehensive build and git information.
+
+### GET /actuator/health
+
+Returns application health status.
+
+### GET /actuator/info
+
+Returns build information via Spring Boot Actuator.
+
+## Product Endpoint Response
 
 **Success (200)**:
 ```json
@@ -184,6 +200,45 @@ Returns similar products details.
 - **Retry with exponential backoff**
 - **Configurable timeouts**
 
+## CI/CD & Performance Testing
+
+### GitHub Actions Workflow
+
+Automated CI/CD pipeline with performance testing:
+
+```bash
+# Triggers on push to any branch
+Build Job:
+├── Unit Tests
+├── Maven Build
+└── ✅ Success
+
+Performance Job (after build):
+├── Independent Maven Build
+├── Start Application
+├── K6 Performance Tests (320+ RPS)
+└── API Verification
+```
+
+**Architecture:** Each job builds independently for maximum reliability.
+
+### Performance Testing with K6
+
+- **Load testing** with 200 virtual users
+- **Multiple scenarios**: normal, error, slow, timeout
+- **Realistic test patterns**
+- **Performance metrics**: RPS, latency, error rates
+
+View results in GitHub Actions after each commit.
+
+### Key Metrics Achieved
+
+- ✅ **320+ requests/second**
+- ✅ **P95 < 30ms response time**  
+- ✅ **<1% error rate**
+- ✅ **Circuit breaker protection**
+- ✅ **Robust CI/CD pipeline**
+
 ## SOLID Principles
 
 - **Single Responsibility**: Each module has one reason to change
@@ -213,10 +268,188 @@ Returns similar products details.
 Key settings in `bootstrap/src/main/resources/application.yml`:
 
 ```yaml
-server.port: 5000
-external-apis.product-service.base-url: http://localhost:3001
-resilience4j.circuitbreaker...
+# Server configuration
+server:
+  port: 5000
+
+# Product service configuration  
+product:
+  service:
+    base-url: http://localhost:3001
+
+# Similar products service configuration
+similar-products:
+  service:
+    base-url: http://localhost:3002
 ```
+
+## Available Scripts
+
+Essential development scripts located in `scripts/`:
+
+- **`run-all-tests.ps1`** - Execute complete test suite
+- **`run-performance-tests.ps1`** - Run K6 performance tests  
+- **`run-production-tests.ps1`** - Production environment testing
+- **`setup-grafana-dashboard.ps1`** - Setup monitoring dashboard
+- **`smoke-tests.ps1`** - Post-deployment verification tests
+- **`gitflow-help.ps1`** - Quick reference for GitFlow Maven Plugin
+
+**Note:** Release management is now handled by GitFlow Maven Plugin:
+```bash
+mvn gitflow:release-start -DreleaseVersion=X.Y.Z
+mvn gitflow:release-finish -DreleaseVersion=X.Y.Z
+```
+
+## Release Management
+
+### GitFlow Process
+
+This project follows **GitFlow** branching strategy:
+- **`master`** - Production-ready code, only releases
+- **`develop`** - Integration branch for features
+- **`feature/*`** - Feature development branches
+- **`release/*`** - Release preparation branches
+- **`hotfix/*`** - Emergency fixes for production
+
+### GitFlow Release Process (Professional Maven Plugin)
+
+This project uses the **GitFlow Maven Plugin** for professional release management.
+
+#### Complete Release Flow
+
+```bash
+# 1. INTEGRATE CHANGES TO DEVELOP (first commit changes)
+git checkout develop
+git add .
+git commit -m "feat: add version management and CI/CD improvements"
+git push origin develop
+
+# 2. START RELEASE (creates release branch and updates version)
+mvn gitflow:release-start -DreleaseVersion=1.0.0 -DdevelopmentVersion=1.1.0-SNAPSHOT
+
+# 3. OPTIONAL: Make final adjustments to release branch
+# (run tests, fix last-minute issues, etc.)
+
+# 4. FINISH RELEASE (merges to master, tags, merges back to develop)
+mvn gitflow:release-finish -DreleaseVersion=1.0.0 -DdevelopmentVersion=1.1.0-SNAPSHOT
+
+# 5. PUSH EVERYTHING
+git push origin master
+git push origin develop  
+git push origin v1.0.0
+```
+
+#### Available GitFlow Commands
+
+**Release Management:**
+```bash
+# Start a release
+mvn gitflow:release-start -DreleaseVersion=1.1.0
+
+# Finish a release
+mvn gitflow:release-finish -DreleaseVersion=1.1.0
+
+# List current releases
+mvn gitflow:release-list
+```
+
+**Feature Management:**
+```bash
+# Start a feature
+mvn gitflow:feature-start -DfeatureName=my-feature
+
+# Finish a feature (merges to develop)
+mvn gitflow:feature-finish -DfeatureName=my-feature
+
+# List features
+mvn gitflow:feature-list
+```
+
+**Hotfix Management:**
+```bash
+# Start a hotfix from master
+mvn gitflow:hotfix-start -DreleaseVersion=1.0.1
+
+# Finish a hotfix
+mvn gitflow:hotfix-finish -DreleaseVersion=1.0.1
+```
+
+#### Why GitFlow Maven Plugin is Better
+
+✅ **Industry Standard** - Well-tested and widely used  
+✅ **Automatic Version Management** - Updates all POMs correctly  
+✅ **Complete GitFlow Support** - Features, releases, hotfixes  
+✅ **Rollback Support** - Can abort operations safely  
+✅ **IntelliJ Integration** - Available in Maven tool window  
+✅ **Consistent Workflow** - Enforces proper GitFlow process  
+✅ **Multi-module Support** - Handles complex Maven projects
+
+#### GitHub Actions Workflows
+
+- **Pull Request Workflow** (`.github/workflows/performance.yml`):
+  - Triggers only on Pull Requests to `master` or `develop`
+  - Runs tests and performance validation
+  - Manual trigger available via `workflow_dispatch`
+
+- **Release Workflow** (`.github/workflows/release.yml`):
+  - Triggers on version tags (`v*.*.*`)
+  - Creates GitHub Release with JAR artifact
+  - Runs quality checks and performance tests
+  - Manual trigger available with version input
+
+#### GitFlow Release Process
+
+**For feature development:**
+```bash
+# 1. Create feature branch from develop
+git checkout develop
+git pull origin develop
+git checkout -b feature/your-feature-name
+
+# 2. Develop and test
+# ... make your changes ...
+
+# 3. Create PR to develop branch
+git push origin feature/your-feature-name
+```
+
+**For releases (from develop to master):**
+```bash
+# 1. Create release branch from develop
+git checkout develop
+git pull origin develop
+git checkout -b release/v1.1.0
+
+# 2. Prepare release (run release script)
+.\scripts\release.ps1 -Version "1.1.0"
+
+# 3. Merge to master and tag
+git checkout master
+git merge release/v1.1.0
+git push origin master
+git push origin v1.1.0
+
+# 4. Merge back to develop
+git checkout develop
+git merge release/v1.1.0
+git push origin develop
+```
+
+#### Version Information
+
+The application exposes version information through multiple endpoints:
+
+- `GET /api/v1/version` - Clean JSON version info
+- `GET /api/v1/info` - Comprehensive build and git information  
+- `GET /actuator/info` - Spring Boot Actuator build info
+- `GET /actuator/health` - Health status
+
+#### Versioning Strategy
+
+- **Semantic Versioning**: `MAJOR.MINOR.PATCH`
+- **Git Tags**: Automatically created with `v` prefix (`v1.0.0`)
+- **Build Information**: Includes Git commit, branch, and build timestamp
+- **JAR Naming**: `similar-products-api-{version}.jar`
 
 ## License
 
