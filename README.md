@@ -302,8 +302,9 @@ Essential development scripts located in `scripts/`:
 - **`run-production-tests.ps1`** - Production environment testing
 - **`setup-grafana-dashboard.ps1`** - Setup monitoring dashboard
 - **`smoke-tests.ps1`** - Post-deployment verification tests
-- **`release.ps1`** - Simple release management script
-- **`gitflow-release.ps1`** - Complete GitFlow release automation
+- **`prepare-release.ps1`** - Create and prepare release branch from develop
+- **`gitflow-release.ps1`** - Create official release on master branch
+- **`release.ps1`** - Simple release management script (legacy)
 
 ## Release Management
 
@@ -316,53 +317,67 @@ This project follows **GitFlow** branching strategy:
 - **`release/*`** - Release preparation branches
 - **`hotfix/*`** - Emergency fixes for production
 
-### Automated GitFlow Release
+### GitFlow Release Process (Correct & Simplified)
 
-#### Option 1: Complete GitFlow Automation (Recommended)
+This project follows a simplified GitFlow strategy:
 
-```powershell
-# Full GitFlow release process in one command
-.\scripts\gitflow-release.ps1 -Version "1.1.0"
-
-# Dry run first to see what will happen
-.\scripts\gitflow-release.ps1 -Version "1.1.0" -DryRun
-```
-
-**This script automatically:**
-1. ✅ Creates release branch from `develop`
-2. ✅ Updates version in all POM files
-3. ✅ Runs complete test suite
-4. ✅ Builds and packages application
-5. ✅ Merges to `master` with proper tag
-6. ✅ Merges back to `develop`
-7. ✅ Cleans up release branch
-
-#### Option 2: Manual GitFlow Process
+#### Complete Release Flow
 
 ```bash
-# Current situation: You have changes that need to go to develop first
+# 1. INTEGRATE CHANGES TO DEVELOP
 git checkout develop
 git add .
 git commit -m "feat: add version management and CI/CD improvements"
 git push origin develop
 
-# Then create release from develop
-git checkout -b release/v1.0.0
-.\scripts\release.ps1 -Version "1.0.0"
+# 2. PREPARE RELEASE (master → release branch ← develop)
+.\scripts\prepare-release.ps1 -Version "1.0.0"
+# This script:
+# - Creates release/v1.0.0 FROM master
+# - Merges develop INTO release branch
+# - Updates version to 1.0.0
+# - Runs tests and builds package
 
-# Merge to master
-git checkout master
-git merge --no-ff release/v1.0.0
-git push origin master
+# 3. PUSH RELEASE BRANCH AND CREATE PR
+git push origin release/v1.0.0
+# Create PR: release/v1.0.0 → master
+
+# 4. MERGE PR AND FINALIZE
+# (After PR is merged through GitHub)
+.\scripts\gitflow-release.ps1 -Version "1.0.0"
+# This creates the git tag v1.0.0
+
+# 5. PUSH TAG
 git push origin v1.0.0
 
-# Merge back to develop
-git checkout develop  
-git merge --no-ff release/v1.0.0
-git push origin develop
-
-# Clean up
+# 6. CLEANUP
 git branch -d release/v1.0.0
+```
+
+#### Why This Process Works
+
+- ✅ **Stable base**: Release branch starts from stable master
+- ✅ **Feature integration**: Develop is merged into release branch
+- ✅ **PR review**: Release → master goes through PR process
+- ✅ **Clean finish**: No complex merge-back logic
+- ✅ **Automated release**: GitHub Actions triggers on tag push
+
+#### Available Scripts
+
+- **`prepare-release.ps1`** - Creates release branch (master→release←develop)
+- **`gitflow-release.ps1`** - Finalizes release (creates tag after PR merge)
+- **`release.ps1`** - Legacy simple release script
+
+#### Script Usage
+
+```powershell
+# Step 1: Prepare release branch
+.\scripts\prepare-release.ps1 -Version "1.0.0" -DryRun  # Test first
+.\scripts\prepare-release.ps1 -Version "1.0.0"         # Real execution
+
+# Step 2: After PR merge, finalize release  
+.\scripts\gitflow-release.ps1 -Version "1.0.0" -DryRun  # Test first
+.\scripts\gitflow-release.ps1 -Version "1.0.0"         # Real execution
 ```
 
 #### GitHub Actions Workflows
