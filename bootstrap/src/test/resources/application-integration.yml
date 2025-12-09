@@ -1,0 +1,42 @@
+# Integration Test Configuration
+# This configuration is optimized for integration tests with external services
+
+server:
+  port: 0  # Random port to avoid conflicts
+
+# External API Configuration
+external-apis:
+  product-service:
+    base-url: ${WIREMOCK_BASE_URL:http://localhost:8089}
+    timeout: 5000
+
+external:
+  apis:
+    product-service:
+      base-url: ${WIREMOCK_BASE_URL:http://localhost:8089}
+      timeout: 5000
+
+# Spring Configuration
+spring:
+  main:
+    allow-bean-definition-overriding: true
+    lazy-initialization: true  # Faster startup for tests
+  webflux:
+    base-path: ""
+
+# Logging Configuration
+logging:
+  level:
+    com.company.similarproducts: DEBUG
+    org.springframework.web: ERROR
+    org.springframework.boot: ERROR
+    org.testcontainers: INFO
+    reactor.netty: ERROR
+    io.netty: ERROR
+  pattern:
+    console: "%d{yyyy-MM-dd HH:mm:ss} - %msg%n"
+
+# Test specific properties
+testcontainers:
+  reuse:
+    enable: true  # Reuse containers for faster test execution
