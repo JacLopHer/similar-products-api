@@ -281,16 +281,6 @@ product:
 similar-products:
   service:
     base-url: http://localhost:3002
-
-# Circuit breaker configuration
-resilience4j:
-  circuit-breaker:
-    instances:
-      productService:
-        register-health-indicator: true
-        failure-rate-threshold: 50
-        wait-duration-in-open-state: 5s
-        automatic-transition-from-open-to-half-open-enabled: true
 ```
 
 ## Available Scripts
