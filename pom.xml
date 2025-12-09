@@ -7,7 +7,7 @@
 
     <groupId>com.company</groupId>
     <artifactId>similar-products-api</artifactId>
-    <version>1.0.0</version>
+    <version>1.0.1-SNAPSHOT</version>
     <packaging>pom</packaging>
 
     <name>Similar Products API</name>
@@ -146,27 +146,10 @@
                         </gitFlowConfig>
 
                         <!-- Release configuration -->
-                        <releaseRebase>false</releaseRebase>
-                        <keepBranch>false</keepBranch>
                         <pushRemote>true</pushRemote>
-
-                        <!-- Version management -->
+                        <keepBranch>false</keepBranch>
                         <skipTestProject>false</skipTestProject>
                         <allowSnapshots>false</allowSnapshots>
-
-                        <!-- Commit messages -->
-                        <commitMessages>
-                            <releaseStartMessage>release: start release of @{version}</releaseStartMessage>
-                            <releaseFinishMessage>release: finish release of @{version}</releaseFinishMessage>
-                            <releaseVersionUpdateMessage>release: update version to @{version}</releaseVersionUpdateMessage>
-
-                            <featureStartMessage>feature: start feature @{featureName}</featureStartMessage>
-                            <featureFinishMessage>feature: finish feature @{featureName}</featureFinishMessage>
-
-                            <hotfixStartMessage>hotfix: start hotfix @{version}</hotfixStartMessage>
-                            <hotfixFinishMessage>hotfix: finish hotfix @{version}</hotfixFinishMessage>
-                            <hotfixVersionUpdateMessage>hotfix: update version to @{version}</hotfixVersionUpdateMessage>
-                        </commitMessages>
                     </configuration>
                 </plugin>
             </plugins>
