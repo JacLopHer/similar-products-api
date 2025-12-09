@@ -19,7 +19,7 @@ import reactor.core.publisher.Mono;
 import java.math.BigDecimal;
 import java.util.List;
 
-import static org.assertj.core.api.Assertions.assertThat;
+import static org.hamcrest.Matchers.containsString;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.when;
 
@@ -87,7 +87,7 @@ class RestControllerSliceTest {
                 .expectHeader().contentType("application/problem+json")
                 .expectBody()
                 .jsonPath("$.title").isEqualTo("Product Not Found")
-                .jsonPath("$.detail").value(message -> message.toString().contains("999"))
+                .jsonPath("$.detail").value(containsString("999"))
                 .jsonPath("$.status").isEqualTo(404);
     }
 
@@ -116,8 +116,7 @@ class RestControllerSliceTest {
                 .expectHeader().contentType("application/problem+json")
                 .expectBody()
                 .jsonPath("$.title").isEqualTo("Validation Error")
-                .jsonPath("$.detail").value(detail ->
-                    assertThat(detail.toString()).contains("Product ID must not be blank"));
+                .jsonPath("$.detail").value(containsString("Product ID must not be blank"));
     }
 
     @Test
