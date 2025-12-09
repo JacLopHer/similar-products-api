@@ -18,11 +18,12 @@ import java.util.Optional;
 @RequestMapping("/api/v1")
 public class VersionController {
 
+    private static final String UNKNOWN = "unknown";
+
     private final Optional<BuildProperties> buildProperties;
     private final Optional<GitProperties> gitProperties;
     private final VersionInfoContributor versionInfoContributor;
 
-    private static final String UNKONWN = "unknown";
 
     @Autowired
     public VersionController(
@@ -38,10 +39,10 @@ public class VersionController {
     public VersionResponse getVersion() {
         String version = buildProperties.map(BuildProperties::getVersion).orElse("1.0.0");
         String buildTime = buildProperties
-            .map(build -> build.getTime() != null ? build.getTime().toString() : UNKONWN)
-            .orElse(UNKONWN);
-        String gitCommit = gitProperties.map(GitProperties::getShortCommitId).orElse(UNKONWN);
-        String gitBranch = gitProperties.map(git -> git.get("branch")).orElse(UNKONWN);
+            .map(build -> build.getTime() != null ? build.getTime().toString() : UNKNOWN)
+            .orElse(UNKNOWN);
+        String gitCommit = gitProperties.map(GitProperties::getShortCommitId).orElse(UNKNOWN);
+        String gitBranch = gitProperties.map(git -> git.get("branch")).orElse(UNKNOWN);
 
         return new VersionResponse(
             "Similar Products API",
