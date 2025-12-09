@@ -13,10 +13,10 @@ public class ProductRestMapper {
 
     public ProductResponse toResponse(Product product) {
         return ProductResponse.builder()
-                .id(product.getId())
-                .name(product.getName())
-                .price(product.getPrice())
-                .availability(product.isAvailability())
+                .id(product.id())
+                .name(product.name())
+                .price(product.price())
+                .availability(product.availability())
                 .build();
     }
 }

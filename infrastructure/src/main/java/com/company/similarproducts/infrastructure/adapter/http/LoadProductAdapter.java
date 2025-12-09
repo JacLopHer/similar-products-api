@@ -8,13 +8,8 @@ import com.company.similarproducts.infrastructure.adapter.http.mapper.ProductDom
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
+import reactor.core.publisher.Mono;
 
-import java.util.Optional;
-
-/**
- * Secondary/Driven Adapter - Implements LoadProductPort.
- * Calls external product API via HTTP.
- */
 @Slf4j
 @Component
 @RequiredArgsConstructor
@@ -24,9 +19,9 @@ public class LoadProductAdapter implements LoadProductPort {
     private final ProductDomainMapper mapper;
 
     @Override
-    public Optional<Product> loadProduct(ProductId productId) {
-        log.debug("Loading product via HTTP: {}", productId);
-        
+    public Mono<Product> loadProduct(ProductId productId) {
+        log.debug("Loading product reactively: {}", productId);
+
         return productApiClient.getProductById(productId.value())
                 .map(mapper::toDomain);
     }

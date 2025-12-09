@@ -6,6 +6,9 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ProblemDetail;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
+import org.springframework.web.bind.support.WebExchangeBindException;
+
+import jakarta.validation.ConstraintViolationException;
 
 /**
  * Global exception handler for REST controllers.
@@ -15,10 +18,34 @@ import org.springframework.web.bind.annotation.RestControllerAdvice;
 @RestControllerAdvice
 public class GlobalExceptionHandler {
 
+    @ExceptionHandler(ConstraintViolationException.class)
+    public ProblemDetail handleConstraintViolation(ConstraintViolationException ex) {
+        log.warn("Constraint violation caught by handler: {}", ex.getMessage());
+
+        ProblemDetail problemDetail = ProblemDetail.forStatusAndDetail(
+                HttpStatus.BAD_REQUEST,
+                ex.getMessage()
+        );
+        problemDetail.setTitle("Validation Error");
+        return problemDetail;
+    }
+
+    @ExceptionHandler(WebExchangeBindException.class)
+    public ProblemDetail handleWebExchangeBindException(WebExchangeBindException ex) {
+        log.warn("Validation error: {}", ex.getMessage());
+
+        ProblemDetail problemDetail = ProblemDetail.forStatusAndDetail(
+                HttpStatus.BAD_REQUEST,
+                "Validation failed"
+        );
+        problemDetail.setTitle("Validation Error");
+        return problemDetail;
+    }
+
     @ExceptionHandler(ProductNotFoundException.class)
     public ProblemDetail handleProductNotFound(ProductNotFoundException ex) {
         log.warn("Product not found: {}", ex.getProductId());
-        
+
         ProblemDetail problemDetail = ProblemDetail.forStatusAndDetail(
                 HttpStatus.NOT_FOUND,
                 ex.getMessage()
