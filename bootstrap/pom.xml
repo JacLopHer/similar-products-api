@@ -8,7 +8,7 @@
     <parent>
         <groupId>com.company</groupId>
         <artifactId>similar-products-api</artifactId>
-        <version>1.0.0-SNAPSHOT</version>
+        <version>1.0.0</version>
     </parent>
 
     <artifactId>bootstrap</artifactId>
@@ -54,31 +54,34 @@
         <dependency>
             <groupId>org.testcontainers</groupId>
             <artifactId>junit-jupiter</artifactId>
-            <version>1.19.3</version>
             <scope>test</scope>
         </dependency>
         <dependency>
             <groupId>org.testcontainers</groupId>
             <artifactId>testcontainers</artifactId>
-            <version>1.19.3</version>
             <scope>test</scope>
         </dependency>
-        <!-- WireMock para pruebas de integración -->
+        <!-- WireMock for integration testing -->
         <dependency>
             <groupId>org.wiremock</groupId>
             <artifactId>wiremock-standalone</artifactId>
-            <version>3.0.1</version>
             <scope>test</scope>
         </dependency>
     </dependencies>
 
     <build>
         <plugins>
+            <!-- Git Information Plugin -->
+            <plugin>
+                <groupId>pl.project13.maven</groupId>
+                <artifactId>git-commit-id-plugin</artifactId>
+            </plugin>
+
             <!-- Ensure test WireMock resources directory is cleaned before tests run to avoid stale mappings -->
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-antrun-plugin</artifactId>
-                <version>3.1.0</version>
+                <version>${maven-antrun-plugin.version}</version>
                 <executions>
                     <execution>
                         <id>clean-wiremock-test-resources</id>
@@ -104,16 +107,24 @@
                     <execution>
                         <goals>
                             <goal>repackage</goal>
+                            <goal>build-info</goal>
                         </goals>
                     </execution>
                 </executions>
+                <configuration>
+                    <additionalProperties>
+                        <time>${maven.build.timestamp}</time>
+                        <java.version>${java.version}</java.version>
+                        <project.description>${project.description}</project.description>
+                    </additionalProperties>
+                </configuration>
             </plugin>
 
-            <!-- Failsafe para pruebas de integración con sufijo *IT -->
+            <!-- Failsafe for integration tests with *IT suffix -->
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-failsafe-plugin</artifactId>
-                <version>3.0.0</version>
+                <version>${maven-failsafe-plugin.version}</version>
                 <configuration>
                     <includes>
                         <include>**/*IT.java</include>

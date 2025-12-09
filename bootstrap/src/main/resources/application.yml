@@ -8,6 +8,21 @@ spring:
   application:
     name: similar-products-api
 
+# Spring Boot Actuator Configuration
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info,version
+  endpoint:
+    health:
+      show-details: when-authorized
+  info:
+    git:
+      mode: full
+    build:
+      enabled: true
+
 external-apis:
   product-service:
     base-url: http://localhost:3001

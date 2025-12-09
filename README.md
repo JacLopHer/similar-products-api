@@ -60,16 +60,27 @@ mvn clean package
 
 ## Running the Application
 
+**Server Configuration (from application.yml):**
+- **Port**: 5000
+- **Connection Timeout**: 20s  
+- **Idle Timeout**: 60s
+- **External API Base URL**: http://localhost:3001
+- **API Timeout**: 2000ms
+
 ```bash
 # From root
 cd bootstrap
 mvn spring-boot:run
 
-# Or run JAR
-java -jar bootstrap/target/bootstrap-1.0.0-SNAPSHOT.jar
+# Or run JAR directly
+java -jar bootstrap/target/bootstrap-1.0.0.jar
 ```
 
-Application runs on **port 5000**.
+**Available Endpoints:**
+- **Main API**: http://localhost:5000/product/{id}/similar
+- **Version Info**: http://localhost:5000/api/v1/version
+- **Health Check**: http://localhost:5000/actuator/health
+- **Build Info**: http://localhost:5000/actuator/info
 
 ## Testing with Mocks
 
@@ -79,10 +90,17 @@ Start mock services (from `backendDevTest` directory):
 docker-compose up -d simulado influxdb grafana
 ```
 
-Test the endpoint:
+Test the endpoints:
 
 ```bash
+# Test main API
 curl http://localhost:5000/product/1/similar
+
+# Test version endpoint
+curl http://localhost:5000/api/v1/version
+
+# Test health check
+curl http://localhost:5000/actuator/health
 ```
 
 ## API Contract
@@ -90,6 +108,35 @@ curl http://localhost:5000/product/1/similar
 ### GET /product/{productId}/similar
 
 Returns similar products details.
+
+### GET /api/v1/version
+
+Returns application version and build information.
+
+**Success (200)**:
+```json
+{
+  "application": "Similar Products API",
+  "version": "1.0.0",
+  "buildTime": "2025-12-09T19:25:44.123Z",
+  "gitCommit": "abc123f",
+  "gitBranch": "main"
+}
+```
+
+### GET /api/v1/info
+
+Returns comprehensive build and git information.
+
+### GET /actuator/health
+
+Returns application health status.
+
+### GET /actuator/info
+
+Returns build information via Spring Boot Actuator.
+
+## Product Endpoint Response
 
 **Success (200)**:
 ```json
@@ -255,6 +302,153 @@ Essential development scripts located in `scripts/`:
 - **`run-production-tests.ps1`** - Production environment testing
 - **`setup-grafana-dashboard.ps1`** - Setup monitoring dashboard
 - **`smoke-tests.ps1`** - Post-deployment verification tests
+- **`prepare-release.ps1`** - Create and prepare release branch from develop
+- **`gitflow-release.ps1`** - Create official release on master branch
+- **`release.ps1`** - Simple release management script (legacy)
+
+## Release Management
+
+### GitFlow Process
+
+This project follows **GitFlow** branching strategy:
+- **`master`** - Production-ready code, only releases
+- **`develop`** - Integration branch for features
+- **`feature/*`** - Feature development branches
+- **`release/*`** - Release preparation branches
+- **`hotfix/*`** - Emergency fixes for production
+
+### GitFlow Release Process (Correct & Simplified)
+
+This project follows a simplified GitFlow strategy:
+
+#### Complete Release Flow
+
+```bash
+# 1. INTEGRATE CHANGES TO DEVELOP
+git checkout develop
+git add .
+git commit -m "feat: add version management and CI/CD improvements"
+git push origin develop
+
+# 2. PREPARE RELEASE (scripts handle git checkout automatically)
+.\scripts\prepare-release.ps1 -Version "1.0.0"
+# This script automatically:
+# - Switches to master branch
+# - Creates release/v1.0.0 FROM master
+# - Merges develop INTO release branch
+# - Updates version to 1.0.0
+# - Runs tests and builds package
+
+# 3. PUSH RELEASE BRANCH AND CREATE PR
+git push origin release/v1.0.0
+# Create PR: release/v1.0.0 → master
+
+# 4. MERGE PR AND FINALIZE (scripts handle git checkout automatically)
+# (After PR is merged through GitHub)
+.\scripts\gitflow-release.ps1 -Version "1.0.0"
+# This script automatically:
+# - Switches to master branch 
+# - Creates git tag v1.0.0
+
+# 5. PUSH TAG
+git push origin v1.0.0
+
+# 6. CLEANUP
+git branch -d release/v1.0.0
+```
+
+#### Why This Process Works
+
+- ✅ **Stable base**: Release branch starts from stable master
+- ✅ **Feature integration**: Develop is merged into release branch
+- ✅ **PR review**: Release → master goes through PR process
+- ✅ **Clean finish**: No complex merge-back logic
+- ✅ **Automated release**: GitHub Actions triggers on tag push
+
+#### Available Scripts
+
+- **`prepare-release.ps1`** - Creates release branch (master→release←develop)
+- **`gitflow-release.ps1`** - Finalizes release (creates tag after PR merge)
+- **`release.ps1`** - Legacy simple release script
+
+#### Script Usage
+
+```powershell
+# Step 1: Prepare release branch
+.\scripts\prepare-release.ps1 -Version "1.0.0" -DryRun  # Test first
+.\scripts\prepare-release.ps1 -Version "1.0.0"         # Real execution
+
+# Step 2: After PR merge, finalize release  
+.\scripts\gitflow-release.ps1 -Version "1.0.0" -DryRun  # Test first
+.\scripts\gitflow-release.ps1 -Version "1.0.0"         # Real execution
+```
+
+#### GitHub Actions Workflows
+
+- **Pull Request Workflow** (`.github/workflows/performance.yml`):
+  - Triggers only on Pull Requests to `master` or `develop`
+  - Runs tests and performance validation
+  - Manual trigger available via `workflow_dispatch`
+
+- **Release Workflow** (`.github/workflows/release.yml`):
+  - Triggers on version tags (`v*.*.*`)
+  - Creates GitHub Release with JAR artifact
+  - Runs quality checks and performance tests
+  - Manual trigger available with version input
+
+#### GitFlow Release Process
+
+**For feature development:**
+```bash
+# 1. Create feature branch from develop
+git checkout develop
+git pull origin develop
+git checkout -b feature/your-feature-name
+
+# 2. Develop and test
+# ... make your changes ...
+
+# 3. Create PR to develop branch
+git push origin feature/your-feature-name
+```
+
+**For releases (from develop to master):**
+```bash
+# 1. Create release branch from develop
+git checkout develop
+git pull origin develop
+git checkout -b release/v1.1.0
+
+# 2. Prepare release (run release script)
+.\scripts\release.ps1 -Version "1.1.0"
+
+# 3. Merge to master and tag
+git checkout master
+git merge release/v1.1.0
+git push origin master
+git push origin v1.1.0
+
+# 4. Merge back to develop
+git checkout develop
+git merge release/v1.1.0
+git push origin develop
+```
+
+#### Version Information
+
+The application exposes version information through multiple endpoints:
+
+- `GET /api/v1/version` - Clean JSON version info
+- `GET /api/v1/info` - Comprehensive build and git information  
+- `GET /actuator/info` - Spring Boot Actuator build info
+- `GET /actuator/health` - Health status
+
+#### Versioning Strategy
+
+- **Semantic Versioning**: `MAJOR.MINOR.PATCH`
+- **Git Tags**: Automatically created with `v` prefix (`v1.0.0`)
+- **Build Information**: Includes Git commit, branch, and build timestamp
+- **JAR Naming**: `similar-products-api-{version}.jar`
 
 ## License
 
