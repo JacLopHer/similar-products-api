@@ -1,0 +1,3 @@
+# This file ensures the __files directory exists for WireMock
+# WireMock requires this directory structure even if it's empty
+

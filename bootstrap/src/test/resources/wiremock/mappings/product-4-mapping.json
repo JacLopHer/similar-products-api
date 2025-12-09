@@ -1,5 +1,0 @@
-{
-  "request": { "method": "GET", "url": "/product/4" },
-  "response": { "status": 200, "bodyFileName": "product-4.json", "headers": { "Content-Type": "application/json" } }
-}
-
