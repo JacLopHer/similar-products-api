@@ -63,16 +63,21 @@ try {
     Write-Success "Repository is clean"
     Write-Host "Current branch: $currentBranch" -ForegroundColor White
 
-    # Step 2: Verify we're on master with the release
-    Write-Step "Verifying master branch with release content..."
+    # Step 2: Ensure we're on master and up to date
+    Write-Step "Ensuring we're on master branch and up to date..."
 
     if (-not $DryRun) {
-        & git checkout master
-        if ($LASTEXITCODE -ne 0) {
-            Write-Error "❌ Failed to checkout master"
-            exit 1
+        # Switch to master if not already there
+        if ($currentBranch -ne "master") {
+            Write-Host "Switching from $currentBranch to master..." -ForegroundColor Yellow
+            & git checkout master
+            if ($LASTEXITCODE -ne 0) {
+                Write-Error "❌ Failed to checkout master"
+                exit 1
+            }
         }
 
+        # Pull latest changes from remote
         & git pull origin master
         if ($LASTEXITCODE -ne 0) {
             Write-Error "❌ Failed to pull latest master"

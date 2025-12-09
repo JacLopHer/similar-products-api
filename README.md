@@ -330,9 +330,10 @@ git add .
 git commit -m "feat: add version management and CI/CD improvements"
 git push origin develop
 
-# 2. PREPARE RELEASE (master → release branch ← develop)
+# 2. PREPARE RELEASE (scripts handle git checkout automatically)
 .\scripts\prepare-release.ps1 -Version "1.0.0"
-# This script:
+# This script automatically:
+# - Switches to master branch
 # - Creates release/v1.0.0 FROM master
 # - Merges develop INTO release branch
 # - Updates version to 1.0.0
@@ -342,10 +343,12 @@ git push origin develop
 git push origin release/v1.0.0
 # Create PR: release/v1.0.0 → master
 
-# 4. MERGE PR AND FINALIZE
+# 4. MERGE PR AND FINALIZE (scripts handle git checkout automatically)
 # (After PR is merged through GitHub)
 .\scripts\gitflow-release.ps1 -Version "1.0.0"
-# This creates the git tag v1.0.0
+# This script automatically:
+# - Switches to master branch 
+# - Creates git tag v1.0.0
 
 # 5. PUSH TAG
 git push origin v1.0.0
