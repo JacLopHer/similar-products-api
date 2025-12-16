@@ -1,9 +1,9 @@
 # Complete Testing Suite Runner
-# Executes all types of tests: Unit -> Integration -> Resilience -> Performance
+# Executes all types of tests: Unit -> Integration -> Performance
 
 param(
     [Parameter()]
-    [ValidateSet("all", "unit", "integration", "resilience", "performance")]
+    [ValidateSet("all", "unit", "integration", "performance")]
     [string]$TestType = "all"
 )
 
@@ -49,18 +49,6 @@ function Run-IntegrationTests {
     }
 }
 
-function Run-ResilienceTests {
-    Write-Header "RUNNING RESILIENCE TESTS"
-    mvn test -Dtest=SimilarProductsResilienceTest -pl bootstrap
-    if ($LASTEXITCODE -eq 0) {
-        Write-Success "Resilience tests passed"
-        return $true
-    } else {
-        Write-Error "Resilience tests failed"
-        return $false
-    }
-}
-
 function Run-PerformanceTests {
     Write-Header "RUNNING PERFORMANCE TESTS"
     .\scripts\run-performance-tests.ps1
@@ -79,9 +67,6 @@ switch ($TestType) {
     "integration" {
         $success = Run-IntegrationTests
     }
-    "resilience" {
-        $success = Run-ResilienceTests
-    }
     "performance" {
         $success = Run-PerformanceTests
     }
@@ -90,13 +75,8 @@ switch ($TestType) {
         if ($unitSuccess) {
             $integrationSuccess = Run-IntegrationTests
             if ($integrationSuccess) {
-                $resilienceSuccess = Run-ResilienceTests
-                if ($resilienceSuccess) {
-                    $performanceSuccess = Run-PerformanceTests
-                    $success = $performanceSuccess
-                } else {
-                    $success = $false
-                }
+                $performanceSuccess = Run-PerformanceTests
+                $success = $performanceSuccess
             } else {
                 $success = $false
             }

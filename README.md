@@ -41,7 +41,6 @@ No backwards dependencies allowed!
 - **Spring Boot 3.2.1**
 - **Maven Multi-module**
 - **WebClient** (Reactive HTTP)
-- **Resilience4j** (Circuit Breaker & Retry)
 - **Lombok** (Reduce boilerplate)
 - **JUnit 5 & Mockito** (Testing)
 
@@ -196,7 +195,6 @@ Returns build information via Spring Boot Actuator.
 ## Performance Features
 
 - **Parallel product fetching** (CompletableFuture)
-- **Circuit Breaker** to prevent cascading failures
 - **Retry with exponential backoff**
 - **Configurable timeouts**
 
@@ -236,7 +234,6 @@ View results in GitHub Actions after each commit.
 - ✅ **320+ requests/second**
 - ✅ **P95 < 30ms response time**  
 - ✅ **<1% error rate**
-- ✅ **Circuit breaker protection**
 - ✅ **Robust CI/CD pipeline**
 
 ## SOLID Principles
